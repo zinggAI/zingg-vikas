@@ -200,7 +200,7 @@ public class Block implements Serializable {
 			FieldDefinition context = field;
 			// applicable functions
 			List<HashFunction> functions = functionsMap.get(field.getDataType());
-			
+			List<Canopy> canopiesToTry0 = new ArrayList<Canopy>();
 			if (functions != null) {
 				
 				for (HashFunction function : functions) {
@@ -216,7 +216,12 @@ public class Block implements Serializable {
 								context);
 						trial.estimateElimCount();
 						long elimCount = trial.getElimCount();
-						canopiesToTry.add(trial);
+						if (elimCount != 0) {
+							canopiesToTry.add(trial);
+						}
+						else {
+							canopiesToTry0.add(trial);
+						}
 						if (LOG.isDebugEnabled()) {
 							LOG.debug("Elim Count is " + elimCount
 						
@@ -226,9 +231,12 @@ public class Block implements Serializable {
 								//+ node.training
 								+ ", dupe count " + node.dupeN.size());
 						}
+
 					}
 				}
 			}
+			Canopy can0 = Canopy.estimateCanopiesList(node.getTraining(), canopiesToTry0);
+			if (can0 != null) return can0;
 		}
 		return Canopy.estimateCanopiesList(node.getTraining(), canopiesToTry);
 		//return best;
@@ -299,6 +307,10 @@ public class Block implements Serializable {
 			}
 			// tree.addLeaf(parent, node);
 			node.clearBeforeSaving();
+		}
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("Tree: ");
+			LOG.debug(tree);
 		}
 
 		return tree;
