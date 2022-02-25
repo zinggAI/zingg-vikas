@@ -197,7 +197,7 @@ public class Canopy implements Serializable, Comparable<Canopy> {
 		*/
 		List<Canopy> returnCanopies = new ArrayList<Canopy>();
 		Dataset<Row> newTraining = training.withColumn(ColName.HASH_COL, functions.callUDF(function.getName(), 
-			training.col(context.fieldName)));
+			training.col(context.fieldName))).cache();
 		List<Row> uniqueHashes = newTraining.select(ColName.HASH_COL).distinct().collectAsList();
 		for (Row row : uniqueHashes) {
 			Object key = row.get(0);
@@ -372,7 +372,7 @@ public class Canopy implements Serializable, Comparable<Canopy> {
 			exprs.put(ColName.HASH_COL + i, "approx_count_distinct");			
 		}
 		t = t.agg(exprs);
-		t.show(true);
+		//t.show(true);
 		Row r = t.takeAsList(1).get(0);
 		for (int i=0; i < canopies.size(); ++i) {
 			if (((long) r.getAs("approx_count_distinct(" + ColName.HASH_COL + i + ")")) > 1) return canopies.get(i);
