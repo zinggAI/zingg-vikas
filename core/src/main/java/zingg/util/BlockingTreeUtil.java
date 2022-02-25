@@ -49,7 +49,7 @@ public class BlockingTreeUtil {
        
 		positives = positives.coalesce(1); 
 		Block cblock = new Block(sample, positives, hashFunctions, blockSize);
-		Canopy root = new Canopy(sample.collectAsList(), positives.collectAsList());
+		Canopy root = new Canopy(sample, positives.collectAsList());
 
 		List<FieldDefinition> fd = new ArrayList<FieldDefinition> ();
 

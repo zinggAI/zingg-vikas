@@ -2,13 +2,23 @@ package zingg.block;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.curator.shaded.com.google.common.hash.HashCode;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.functions;
+import org.sparkproject.guava.collect.HashBiMap;
+
+import net.snowflake.client.jdbc.internal.org.bouncycastle.jcajce.provider.symmetric.GOST28147.Mac;
+
+import org.apache.spark.sql.Dataset;
 
 import zingg.client.FieldDefinition;
 import zingg.client.util.ListMap;
@@ -16,7 +26,7 @@ import zingg.hash.HashFunction;
 import zingg.client.util.ColName;
 
 
-public class Canopy implements Serializable {
+public class Canopy implements Serializable, Comparable<Canopy> {
 
 	public static final Log LOG = LogFactory.getLog(Canopy.class);
 
@@ -31,19 +41,21 @@ public class Canopy implements Serializable {
 	// hash of canopy
 	Object hash;
 	// training set
-	List<Row> training;
+	Dataset<Row> training;
 	// duplicates remaining after function is applied
 	List<Row> dupeRemaining;
+	//long trainingSize;
 
 	public Canopy() {
 	}
 
-	public Canopy(List<Row> training, List<Row> dupeN) {
-		this.training = training; //.cache();
+	public Canopy(Dataset<Row> training, List<Row> dupeN) {
+		setTraining(training);
+
 		this.dupeN = dupeN;
 	}
 
-	public Canopy(List<Row> training, List<Row> dupeN, HashFunction function,
+	public Canopy(Dataset<Row> training, List<Row> dupeN, HashFunction function,
 			FieldDefinition context) {
 		this(training, dupeN);
 		this.function = function;
@@ -131,7 +143,7 @@ public class Canopy implements Serializable {
 	/**
 	 * @return the training
 	 */
-	public List<Row> getTraining() {
+	public Dataset<Row> getTraining() {
 		return training;
 	}
 
@@ -139,8 +151,9 @@ public class Canopy implements Serializable {
 	 * @param training
 	 *            the training to set
 	 */
-	public void setTraining(List<Row> training) {
-		this.training = training;
+	public void setTraining(Dataset<Row> training) {
+		this.training = training.cache();
+		//this.trainingSize = training.count();
 	}
 
 	public List<Canopy> getCanopies() {
@@ -166,6 +179,7 @@ public class Canopy implements Serializable {
 		}
 		LOG.debug("getCanopies2" + (System.currentTimeMillis() - ts));
 		return returnCanopies;*/
+		/*
 		ListMap<Object, Row> hashes = new ListMap<Object, Row>();
 		List<Canopy> returnCanopies = new ArrayList<Canopy>();
 		
@@ -180,14 +194,33 @@ public class Canopy implements Serializable {
 		hashes = null;
 		//LOG.debug("getCanopies2" + (System.currentTimeMillis() - ts));
 		return returnCanopies;
+		*/
+		List<Canopy> returnCanopies = new ArrayList<Canopy>();
+		Dataset<Row> newTraining = training.withColumn(ColName.HASH_COL, functions.callUDF(function.getName(), 
+			training.col(context.fieldName)));
+		List<Row> uniqueHashes = newTraining.select(ColName.HASH_COL).distinct().collectAsList();
+		for (Row row : uniqueHashes) {
+			Object key = row.get(0);
+			Dataset<Row> tupleList = newTraining.filter(newTraining.col(ColName.HASH_COL).equalTo(key))
+				.drop(ColName.HASH_COL);
+			tupleList = tupleList.drop(ColName.HASH_COL);
+			Canopy can = new Canopy(tupleList, dupeRemaining);
+			//LOG.debug(" canopy size is " + tupleList.count() + " for  hash "
+			//		+ key);
+			can.hash = key;
+			returnCanopies.add(can);
+		}
+		return returnCanopies;	
 	}
 	
 	public long estimateCanopies() {
+		/*
 		//long ts = System.currentTimeMillis();	
 		Set<Object> hashes = new HashSet<Object>();
 		for (Row r : training) {
 			hashes.add(function.apply(r, context.fieldName));
 		}
+		*/
 		/*
 		List<Row> newTraining = function.apply(training, context.fieldName, ColName.HASH_COL);
 		long uniqueHashes = (long) newTraining.select(functions.approxCountDistinct(
@@ -199,14 +232,23 @@ public class Canopy implements Serializable {
 		long uniqueHashes = newTraining.select(newTraining.col(ColName.HASH_COL)).distinct().count(); //.distinct().count();
 		LOG.warn("estimateCanopies" + (System.currentTimeMillis() - ts1) + " and count is " + uniqueHashes);
 */
-		long uniqueHashes = hashes.size();
+		/*long uniqueHashes = hashes.size();
 		LOG.debug("estimateCanopies- unique hash count is " + uniqueHashes);
 
 		return uniqueHashes;
+		*/
+
+		
+		Dataset<Row> c = training.withColumn(ColName.HASH_COL, functions.callUDF(function.getName(), 
+			training.col(context.fieldName)));
+		return (long) c.agg(functions.approx_count_distinct(ColName.HASH_COL)).takeAsList(1).get(0).get(0);
+		
+		//return 2;
+			
 	}
 
 	public long getTrainingSize() {
-		return training.size(); 
+		return training.count(); 
 	}
 
 	/*
@@ -225,9 +267,9 @@ public class Canopy implements Serializable {
 			str = "Canopy [function=" + function + ", context=" + context
 				+ ", elimCount=" + elimCount + ", hash=" + hash;
 		}
-		if (training != null) {
-			str += ", training=" + training.size();
-		}
+		/*if (training != null) {
+			str += ", training=" + trainingSize;
+		}*/
 		str += "]";
 		return str;
 	}
@@ -244,17 +286,17 @@ public class Canopy implements Serializable {
 		for(Row r: dupeN) {
 			Object hash1 = function.apply(r, context.fieldName);
 			Object hash2 = function.apply(r, ColName.COL_PREFIX + context.fieldName);
-			LOG.debug("hash1 " + hash1);		
-			LOG.debug("hash2 " + hash2);
+			//LOG.debug("hash1 " + hash1);		
+			//LOG.debug("hash2 " + hash2);
 			if (hash1 == null && hash2 ==null) {
 				dupeRemaining.add(r);
 			}
 			else if (hash1 != null && hash2 != null && hash1.equals(hash2)) {
 				dupeRemaining.add(r);
-				LOG.debug("NOT eliminatin " );	
+				//LOG.debug("NOT eliminatin " );	
 			}
 			else {
-				LOG.debug("eliminatin " + r);		
+				//LOG.debug("eliminatin " + r);		
 			}
 		}			
 		elimCount = dupeN.size() - dupeRemaining.size();
@@ -312,5 +354,34 @@ public class Canopy implements Serializable {
 		this.dupeN = null;
 		this.dupeRemaining = null;
 	}
+
+	public int compareTo(Canopy other) {
+		return (int) (other.elimCount - this.elimCount);
+	}
+
+
+	public static Canopy estimateCanopiesList(Dataset<Row> t, List<Canopy> canopies) {
+		Collections.sort(canopies);
+		for (int i=0; i < canopies.size(); ++i) {	
+			Canopy c = canopies.get(i);
+			t = t.withColumn(ColName.HASH_COL + i, functions.callUDF(c.function.getName(), 
+				t.col(c.context.fieldName)));
+		}
+		Map<String, String> exprs = new HashMap<String, String>();
+		for (int i=0; i < canopies.size(); ++i) {	
+			exprs.put(ColName.HASH_COL + i, "approx_count_distinct");			
+		}
+		t = t.agg(exprs);
+		t.show(true);
+		Row r = t.takeAsList(1).get(0);
+		for (int i=0; i < canopies.size(); ++i) {
+			if (((long) r.getAs("approx_count_distinct(" + ColName.HASH_COL + i + ")")) > 1) return canopies.get(i);
+		}
+		return null;		
+		//return 2;
+			
+	}
+
+	
 
 }
