@@ -146,7 +146,6 @@ public class Block implements Serializable {
 								context);
 						trial.estimateElimCount();
 						long elimCount = trial.getElimCount();
-
 						
 						//int trSize = (int) Math.ceil(0.02d * node.dupeN.count());
 						//boolean isNotEliminatingMoreThan1Percent = elimCount <= trSize ? true
@@ -172,10 +171,10 @@ public class Block implements Serializable {
 								least = elimCount;
 								best = trial;
 								best.elimCount = least;
-								/*if (elimCount == 0) {
+								if (elimCount == 0) {
 									LOG.debug("Out of this tyranny " + function);
 									break;
-								}*/
+								}
 							}
 							else {
 								LOG.debug("No child " + function);
@@ -190,6 +189,52 @@ public class Block implements Serializable {
 		return best;
 
 	}
+
+	public Canopy getBestNodeSpark(Tree<Canopy> tree, Canopy parent, Canopy node,
+			List<FieldDefinition> fieldsOfInterest) throws Exception {
+		long least = Long.MAX_VALUE;
+		int maxElimination = 0;
+		Canopy best = null;
+		List<Canopy> canopiesToTry = new ArrayList<Canopy>();
+		for (FieldDefinition field : fieldsOfInterest) {
+			FieldDefinition context = field;
+			// applicable functions
+			List<HashFunction> functions = functionsMap.get(field.getDataType());
+			
+			if (functions != null) {
+				
+				for (HashFunction function : functions) {
+					// /if (!used.contains(field.getIndex(), function) &&
+					if (least ==0) break;//how much better can it get?
+					if (!isFunctionUsed(tree, node, field.fieldName, function) //&&
+							//!childless.contains(function, field.fieldName)
+							) 
+							{
+						LOG.debug("Evaluating field " + field.fieldName
+								+ " and function " + function + " for " + field.dataType);
+						Canopy trial = getNodeFromCurrent(node, function,
+								context);
+						trial.estimateElimCount();
+						long elimCount = trial.getElimCount();
+						canopiesToTry.add(trial);
+						if (LOG.isDebugEnabled()) {
+							LOG.debug("Elim Count is " + elimCount
+						
+								+ " ,least is "
+								+ least
+								//+ " , training is "
+								//+ node.training
+								+ ", dupe count " + node.dupeN.size());
+						}
+					}
+				}
+			}
+		}
+		return Canopy.estimateCanopiesList(node.getTraining(), canopiesToTry);
+		//return best;
+
+	}
+
 
 	/**
 	 * Holy Grail of Standalone
@@ -212,7 +257,7 @@ public class Block implements Serializable {
 		}
 		if (size > maxSize && node.getDupeN() != null && node.getDupeN().size() > 0) {
 			//LOG.debug("Size is bigger ");
-			Canopy best = getBestNode(tree, parent, node, fieldsOfInterest);
+			Canopy best = getBestNodeSpark(tree, parent, node, fieldsOfInterest);
 			if (best != null) {
 				if (LOG.isDebugEnabled()) {
 					LOG.debug(" HashFunction is " + best + " and node is " + node);
@@ -383,7 +428,7 @@ public class Block implements Serializable {
 		
 		if (root.training != null) {
 			LOG.info(" training not null " + root);
-			LOG.info(root.training.size());
+			LOG.info(root.training.count());
 		}
 		for (Canopy c : tree.getSuccessors(root)) {
 			printTree(tree, c);
