@@ -59,7 +59,7 @@ public class BlockingTreeUtil {
 			}
 		}
 
-		Tree<Canopy> blockingTree = cblock.getBlockingTree(null, null, root,
+		Tree<Canopy> blockingTree = cblock.getBlockingTreeSpark(root,
 				fd);
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("The blocking tree is ");

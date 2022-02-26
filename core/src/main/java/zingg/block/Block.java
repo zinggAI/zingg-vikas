@@ -18,6 +18,7 @@ import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 
+import net.snowflake.client.jdbc.internal.org.checkerframework.checker.units.qual.C;
 import zingg.client.FieldDefinition;
 import zingg.client.util.ListMap;
 import zingg.hash.HashFunction;
@@ -191,37 +192,16 @@ public class Block implements Serializable {
 	}
 
 	public Canopy getBestNodeSpark(Tree<Canopy> tree, Canopy parent, Canopy node,
-			List<FieldDefinition> fieldsOfInterest) throws Exception {
+			List<Canopy> canopiesToTry) throws Exception {
 		long least = Long.MAX_VALUE;
 		int maxElimination = 0;
 		Canopy best = null;
-		List<Canopy> canopiesToTry = new ArrayList<Canopy>();
-		for (FieldDefinition field : fieldsOfInterest) {
-			FieldDefinition context = field;
-			// applicable functions
-			List<HashFunction> functions = functionsMap.get(field.getDataType());
-			List<Canopy> canopiesToTry0 = new ArrayList<Canopy>();
-			if (functions != null) {
-				
-				for (HashFunction function : functions) {
-					// /if (!used.contains(field.getIndex(), function) &&
-					if (least ==0) break;//how much better can it get?
-					if (!isFunctionUsed(tree, node, field.fieldName, function) //&&
-							//!childless.contains(function, field.fieldName)
-							) 
-							{
-						LOG.debug("Evaluating field " + field.fieldName
-								+ " and function " + function + " for " + field.dataType);
-						Canopy trial = getNodeFromCurrent(node, function,
-								context);
-						trial.estimateElimCount();
-						long elimCount = trial.getElimCount();
-						if (elimCount != 0) {
-							canopiesToTry.add(trial);
-						}
-						else {
-							canopiesToTry0.add(trial);
-						}
+		int i = 0;
+		for (Canopy c : canopiesToTry) {
+			HashFunction function = c.getFunction();
+			if (!isFunctionUsed(tree, node, c.context.fieldName, function)) {
+						c.estimateElimCount();
+						long elimCount = c.getElimCount();
 						if (LOG.isDebugEnabled()) {
 							LOG.debug("Elim Count is " + elimCount
 						
@@ -231,17 +211,114 @@ public class Block implements Serializable {
 								//+ node.training
 								+ ", dupe count " + node.dupeN.size());
 						}
-
+						if (least > elimCount) {
+							long childrenSize = c.estimateCanopies(i);
+							if (childrenSize > 1) {
+						
+								// && isNotEliminatingMoreThan1Percent) {
+								if (LOG.isDebugEnabled()) {
+									LOG.debug("Yes, this fn has potential " + function);
+								}
+								least = elimCount;
+								best = c;
+								best.elimCount = least;
+								if (elimCount == 0) {
+									LOG.debug("Out of this tyranny " + function);
+									break;
+								}
+							}
+							else {
+								LOG.debug("No child " + function);
+								//childless.add(function, field.fieldName);
+							}
+							
+						}
 					}
 				}
 			}
-			Canopy can0 = Canopy.estimateCanopiesList(node.getTraining(), canopiesToTry0);
-			if (can0 != null) return can0;
 		}
-		return Canopy.estimateCanopiesList(node.getTraining(), canopiesToTry);
-		//return best;
-
+		return best;
 	}
+
+	public Tree<Canopy> getBlockingTreeSpark(Canopy node, List<FieldDefinition> fieldsOfInterest) throws Exception {
+			
+			List<Canopy> canopiesToTry = new ArrayList<Canopy>();
+			for (FieldDefinition field : fieldsOfInterest) {
+				FieldDefinition context = field;
+				// applicable functions
+				List<HashFunction> functions = functionsMap.get(field.getDataType());
+				if (functions != null) {				
+					for (HashFunction function : functions) {
+						Canopy trial = getNodeFromCurrent(node, function,
+								context);
+						canopiesToTry.add(trial);
+					}
+				}
+			}
+			Dataset<Row> functionsAppliedDS = Canopy.apply(node.training, canopiesToTry);
+			node.training = functionsAppliedDS.cache();
+			return getBlockingTreeSpark(null, null, node, canopiesToTry);
+		}
+
+		public Tree<Canopy> getBlockingTreeSpark(Tree<Canopy> tree, Canopy parent,
+				Canopy node, List<Canopy> canopiesToTry) throws Exception {
+			long size = node.getTrainingSize();
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("Size, maxSize " + size + ", " + maxSize);
+			}
+			if (size > maxSize && node.getDupeN() != null && node.getDupeN().size() > 0) {
+				//LOG.debug("Size is bigger ");
+				Canopy best = getBestNodeSpark(tree, parent, node, canopiesToTry);
+				if (best != null) {
+					if (LOG.isDebugEnabled()) {
+						LOG.debug(" HashFunction is " + best + " and node is " + node);
+					}
+					best.copyTo(node);
+					// used.add(node.context.getOperandFields()[0],
+					// best.getFunction());
+					// used.add(1, best.getFunction());
+					if (tree == null && parent == null) {
+						tree = new Tree<Canopy>(node);
+					} 
+					/*else {
+						// /tree.addLeaf(parent, node);
+						used = new ListMap<Integer, HashFunction>();
+					}*/
+					List<Canopy> canopies = node.getCanopies();
+					if (LOG.isDebugEnabled()) {
+						LOG.debug(" Children size is " + canopies.size());
+					}
+					for (Canopy n : canopies) {
+						node.clearBeforeSaving();
+						tree.addLeaf(node, n);
+						if (LOG.isDebugEnabled()) {
+							LOG.debug(" Finding for " + n);
+						}
+					
+						getBlockingTreeSpark(tree, node, n, canopiesToTry);
+					}
+				}
+				else {
+					node.clearBeforeSaving();
+				}
+			} else {
+				if ((node.getDupeN() == null) || (node.getDupeN().size() == 0)) {
+					LOG.warn("Ran out of training at size " + size + " for node " + node);
+				}
+				else {
+					LOG.debug("Min size reached " + size + " for node " + node);
+				}
+				// tree.addLeaf(parent, node);
+				node.clearBeforeSaving();
+			}
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("Tree: ");
+				LOG.debug(tree);
+			}
+
+			return tree;
+		}
+
 
 
 	/**

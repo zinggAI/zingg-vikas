@@ -213,7 +213,7 @@ public class Canopy implements Serializable, Comparable<Canopy> {
 		return returnCanopies;	
 	}
 	
-	public long estimateCanopies() {
+	public long estimateCanopies(int i) {
 		/*
 		//long ts = System.currentTimeMillis();	
 		Set<Object> hashes = new HashSet<Object>();
@@ -239,9 +239,7 @@ public class Canopy implements Serializable, Comparable<Canopy> {
 		*/
 
 		
-		Dataset<Row> c = training.withColumn(ColName.HASH_COL, functions.callUDF(function.getName(), 
-			training.col(context.fieldName)));
-		return (long) c.agg(functions.approx_count_distinct(ColName.HASH_COL)).takeAsList(1).get(0).get(0);
+		return (long) training.agg(functions.approx_count_distinct(ColName.HASH_COL + i)).takeAsList(1).get(0).get(0);
 		
 		//return 2;
 			
@@ -380,6 +378,15 @@ public class Canopy implements Serializable, Comparable<Canopy> {
 		return null;		
 		//return 2;
 			
+	}
+
+	public static Dataset<Row> apply(Dataset<Row> t, List<Canopy> canopies) {
+		for (int i=0; i < canopies.size(); ++i) {	
+			Canopy c = canopies.get(i);
+			t = t.withColumn(ColName.HASH_COL + i, functions.callUDF(c.function.getName(), 
+					t.col(c.context.fieldName)));
+		}	
+		return t;
 	}
 
 	
