@@ -279,7 +279,7 @@ public class Canopy implements Serializable, Comparable<Canopy> {
 		//the function is applied to both columns
 		//if hash is equal, they are not going to be eliminated
 		//filter on hash equal and count 
-		LOG.debug("Applying " + function.getName());
+		LOG.debug("Applying " + function.getName() + " to " + context.fieldName);
 		dupeRemaining = new ArrayList<Row>();
 		for(Row r: dupeN) {
 			Object hash1 = function.apply(r, context.fieldName);
