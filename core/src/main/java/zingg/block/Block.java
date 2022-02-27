@@ -162,7 +162,7 @@ public class Block implements Serializable {
 								+ ", dupe count " + node.dupeN.size());
 						}
 						if (least > elimCount) {
-							long childrenSize = trial.estimateCanopies();
+							long childrenSize = trial.estimateCanopies(0);
 							if (childrenSize > 1) {
 						
 								// && isNotEliminatingMoreThan1Percent) {
@@ -198,6 +198,7 @@ public class Block implements Serializable {
 		Canopy best = null;
 		int i = 0;
 		for (Canopy c : canopiesToTry) {
+			c.training = node.training;
 			HashFunction function = c.getFunction();
 			if (!isFunctionUsed(tree, node, c.context.fieldName, function)) {
 						c.estimateElimCount();
@@ -233,8 +234,6 @@ public class Block implements Serializable {
 							}
 							
 						}
-					}
-				}
 			}
 		}
 		return best;
@@ -342,7 +341,7 @@ public class Block implements Serializable {
 		}
 		if (size > maxSize && node.getDupeN() != null && node.getDupeN().size() > 0) {
 			//LOG.debug("Size is bigger ");
-			Canopy best = getBestNodeSpark(tree, parent, node, fieldsOfInterest);
+			Canopy best = getBestNode(tree, parent, node, fieldsOfInterest);
 			if (best != null) {
 				if (LOG.isDebugEnabled()) {
 					LOG.debug(" HashFunction is " + best + " and node is " + node);
@@ -540,11 +539,8 @@ public class Block implements Serializable {
 			List<Object> returnList = new ArrayList<Object>(seqList.size()+1);
 			returnList.addAll(seqList);
 			returnList.add(bf.toString().hashCode());
-			if (LOG.isDebugEnabled()) {
-				for (Object o: returnList) {
-					LOG.debug("return row col is " + o );
-				}
-			LOG.debug("returning row " + RowFactory.create(returnList) );
+			if (LOG.isDebugEnabled()) {				
+				LOG.debug("returning row " + RowFactory.create(returnList) );
 			}
 			
 			return RowFactory.create(returnList.toArray());			
