@@ -95,7 +95,7 @@
 				]
 			}"
 		}],
-		"labelDataSampleSize" : 0.1,
+		"labelDataSampleSize" : 0.2,
 		"numPartitions":12,
 		"modelId": 101,
 		"zinggDir": "/tmp/models"

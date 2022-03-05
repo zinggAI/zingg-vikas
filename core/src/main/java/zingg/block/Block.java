@@ -120,90 +120,22 @@ public class Block implements Serializable {
 		return trial;
 	}
 
-	public Canopy getBestNode(Tree<Canopy> tree, Canopy parent, Canopy node,
-			List<FieldDefinition> fieldsOfInterest) throws Exception {
-		long least = Long.MAX_VALUE;
-		int maxElimination = 0;
-		Canopy best = null;
-		for (FieldDefinition field : fieldsOfInterest) {
-			//LOG.debug("Trying for " + field);
-			//Class type = FieldClass.getFieldClassClass(field.getFieldClass());
-			FieldDefinition context = field;
-			if (least ==0) break;//how much better can it get?
-			// applicable functions
-			List<HashFunction> functions = functionsMap.get(field.getDataType());
-			if (functions != null) {
-				
-				for (HashFunction function : functions) {
-					// /if (!used.contains(field.getIndex(), function) &&
-					if (least ==0) break;//how much better can it get?
-					if (!isFunctionUsed(tree, node, field.fieldName, function) //&&
-							//!childless.contains(function, field.fieldName)
-							) 
-							{
-						LOG.debug("Evaluating field " + field.fieldName
-								+ " and function " + function + " for " + field.dataType);
-						Canopy trial = getNodeFromCurrent(node, function,
-								context);
-						trial.estimateElimCount();
-						long elimCount = trial.getElimCount();
-						
-						//int trSize = (int) Math.ceil(0.02d * node.dupeN.count());
-						//boolean isNotEliminatingMoreThan1Percent = elimCount <= trSize ? true
-						//		: false;
-
-						if (LOG.isDebugEnabled()) {
-							LOG.debug("Elim Count is " + elimCount
-						
-								+ " ,least is "
-								+ least
-								//+ " , training is "
-								//+ node.training
-								+ ", dupe count " + node.dupeN.size());
-						}
-						if (least > elimCount) {
-							long childrenSize = trial.estimateCanopies(0);
-							if (childrenSize > 1) {
-						
-								// && isNotEliminatingMoreThan1Percent) {
-								if (LOG.isDebugEnabled()) {
-									LOG.debug("Yes, this fn has potential " + function);
-								}
-								least = elimCount;
-								best = trial;
-								best.elimCount = least;
-								if (elimCount == 0) {
-									LOG.debug("Out of this tyranny " + function);
-									break;
-								}
-							}
-							else {
-								LOG.debug("No child " + function);
-								//childless.add(function, field.fieldName);
-							}
-							
-						}
-					}
-				}
-			}
-		}
-		return best;
-
-	}
-
+	
 	public Canopy getBestNodeSpark(Tree<Canopy> tree, Canopy parent, Canopy node,
-			List<Canopy> canopiesToTry) throws Exception {
+			Map<Integer, Canopy> canopiesToTry) throws Exception {
 		long least = Long.MAX_VALUE;
 		int maxElimination = 0;
 		Canopy best = null;
 		int i = 0;
-		for (Canopy c : canopiesToTry) {
+		HashMap<Canopy, Integer> can = new HashMap<Canopy, Integer>();
+		for (Integer j : canopiesToTry.keySet()) {
+			Canopy c = canopiesToTry.get(j);
 			c.training = node.training;
 			HashFunction function = c.getFunction();
 			if (!isFunctionUsed(tree, node, c.context.fieldName, function)) {
 						c.estimateElimCount();
 						long elimCount = c.getElimCount();
-						if (LOG.isDebugEnabled()) {
+						/*if (LOG.isDebugEnabled()) {
 							LOG.debug("Elim Count is " + elimCount
 						
 								+ " ,least is "
@@ -211,37 +143,20 @@ public class Block implements Serializable {
 								//+ " , training is "
 								//+ node.training
 								+ ", dupe count " + node.dupeN.size());
-						}
-						if (least > elimCount) {
-							long childrenSize = c.estimateCanopies(i);
-							if (childrenSize > 1) {
-						
-								// && isNotEliminatingMoreThan1Percent) {
-								if (LOG.isDebugEnabled()) {
-									LOG.debug("Yes, this fn has potential " + function);
-								}
+						}*/
+						if (least >= elimCount || elimCount == 0) {
 								least = elimCount;
-								best = c;
-								best.elimCount = least;
-								if (elimCount == 0) {
-									LOG.debug("Out of this tyranny " + function);
-									break;
-								}
-							}
-							else {
-								LOG.debug("No child " + function);
-								//childless.add(function, field.fieldName);
-							}
-							
-						}
+								can.put(c, j);		
+						}						
 			}
 		}
-		return best;
+		return Canopy.estimateCanopies(node.training, can);
 	}
 
 	public Tree<Canopy> getBlockingTreeSpark(Canopy node, List<FieldDefinition> fieldsOfInterest) throws Exception {
 			
-			List<Canopy> canopiesToTry = new ArrayList<Canopy>();
+			Map<Integer, Canopy> canopiesToTry = new HashMap<Integer, Canopy>();
+			int i = 0;
 			for (FieldDefinition field : fieldsOfInterest) {
 				FieldDefinition context = field;
 				// applicable functions
@@ -250,7 +165,7 @@ public class Block implements Serializable {
 					for (HashFunction function : functions) {
 						Canopy trial = getNodeFromCurrent(node, function,
 								context);
-						canopiesToTry.add(trial);
+						canopiesToTry.put(i++, trial);
 					}
 				}
 			}
@@ -260,12 +175,12 @@ public class Block implements Serializable {
 		}
 
 		public Tree<Canopy> getBlockingTreeSpark(Tree<Canopy> tree, Canopy parent,
-				Canopy node, List<Canopy> canopiesToTry) throws Exception {
+				Canopy node, Map<Integer, Canopy> canopiesToTry) throws Exception {
 			long size = node.getTrainingSize();
 			if (LOG.isDebugEnabled()) {
 				LOG.debug("Size, maxSize " + size + ", " + maxSize);
 			}
-			if (size > maxSize && node.getDupeN() != null && node.getDupeN().size() > 0) {
+			if (node.getDupeN() != null && node.getDupeN().size() > 0 && size > maxSize ) {
 				//LOG.debug("Size is bigger ");
 				Canopy best = getBestNodeSpark(tree, parent, node, canopiesToTry);
 				if (best != null) {
@@ -292,8 +207,7 @@ public class Block implements Serializable {
 						tree.addLeaf(node, n);
 						if (LOG.isDebugEnabled()) {
 							LOG.debug(" Finding for " + n);
-						}
-					
+						}					
 						getBlockingTreeSpark(tree, node, n, canopiesToTry);
 					}
 				}
@@ -320,78 +234,7 @@ public class Block implements Serializable {
 
 
 
-	/**
-	 * Holy Grail of Standalone
-	 * 
-	 * @param tree
-	 * @param parent
-	 * @param node
-	 * @param used
-	 * @return
-	 */
-	public Tree<Canopy> getBlockingTree(Tree<Canopy> tree, Canopy parent,
-			Canopy node, List<FieldDefinition> fieldsOfInterest) throws Exception {
-		/*if (LOG.isDebugEnabled()) {
-			LOG.debug("Tree so far ");
-			LOG.debug(tree);
-		}*/
-		long size = node.getTrainingSize();
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("Size, maxSize " + size + ", " + maxSize);
-		}
-		if (size > maxSize && node.getDupeN() != null && node.getDupeN().size() > 0) {
-			//LOG.debug("Size is bigger ");
-			Canopy best = getBestNode(tree, parent, node, fieldsOfInterest);
-			if (best != null) {
-				if (LOG.isDebugEnabled()) {
-					LOG.debug(" HashFunction is " + best + " and node is " + node);
-				}
-				best.copyTo(node);
-				// used.add(node.context.getOperandFields()[0],
-				// best.getFunction());
-				// used.add(1, best.getFunction());
-				if (tree == null && parent == null) {
-					tree = new Tree<Canopy>(node);
-				} 
-				/*else {
-					// /tree.addLeaf(parent, node);
-					used = new ListMap<Integer, HashFunction>();
-				}*/
-				List<Canopy> canopies = node.getCanopies();
-				if (LOG.isDebugEnabled()) {
-					LOG.debug(" Children size is " + canopies.size());
-				}
-				for (Canopy n : canopies) {
-					node.clearBeforeSaving();
-					tree.addLeaf(node, n);
-					if (LOG.isDebugEnabled()) {
-						LOG.debug(" Finding for " + n);
-					}
-				
-					getBlockingTree(tree, node, n, fieldsOfInterest);
-				}
-			}
-			else {
-				node.clearBeforeSaving();
-			}
-		} else {
-			if ((node.getDupeN() == null) || (node.getDupeN().size() == 0)) {
-				LOG.warn("Ran out of training at size " + size + " for node " + node);
-			}
-			else {
-				LOG.debug("Min size reached " + size + " for node " + node);
-			}
-			// tree.addLeaf(parent, node);
-			node.clearBeforeSaving();
-		}
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("Tree: ");
-			LOG.debug(tree);
-		}
-
-		return tree;
-	}
-
+	
 	public boolean checkFunctionInNode(Canopy node, String name,
 			HashFunction function) {
 		if (node.getFunction() != null && node.getFunction().equals(function)
@@ -539,10 +382,7 @@ public class Block implements Serializable {
 			List<Object> returnList = new ArrayList<Object>(seqList.size()+1);
 			returnList.addAll(seqList);
 			returnList.add(bf.toString().hashCode());
-			if (LOG.isDebugEnabled()) {				
-				LOG.debug("returning row " + RowFactory.create(returnList) );
-			}
-			
+					
 			return RowFactory.create(returnList.toArray());			
 		}
 

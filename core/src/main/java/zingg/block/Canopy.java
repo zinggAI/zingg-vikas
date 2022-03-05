@@ -8,14 +8,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.curator.shaded.com.google.common.hash.HashCode;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.functions;
-import org.sparkproject.guava.collect.HashBiMap;
-
 import net.snowflake.client.jdbc.internal.org.bouncycastle.jcajce.provider.symmetric.GOST28147.Mac;
 
 import org.apache.spark.sql.Dataset;
@@ -24,6 +23,9 @@ import zingg.client.FieldDefinition;
 import zingg.client.util.ListMap;
 import zingg.hash.HashFunction;
 import zingg.client.util.ColName;
+
+import scala.collection.JavaConverters;
+import scala.collection.Seq;
 
 
 public class Canopy implements Serializable, Comparable<Canopy> {
@@ -44,7 +46,7 @@ public class Canopy implements Serializable, Comparable<Canopy> {
 	Dataset<Row> training;
 	// duplicates remaining after function is applied
 	List<Row> dupeRemaining;
-	//long trainingSize;
+	long trainingSize = -1;
 
 	public Canopy() {
 	}
@@ -198,7 +200,11 @@ public class Canopy implements Serializable, Comparable<Canopy> {
 		List<Canopy> returnCanopies = new ArrayList<Canopy>();
 		Dataset<Row> newTraining = training.withColumn(ColName.HASH_COL, functions.callUDF(function.getName(), 
 			training.col(context.fieldName))).cache();
-		List<Row> uniqueHashes = newTraining.select(ColName.HASH_COL).distinct().collectAsList();
+		//List<Row> uniqueHashes = newTraining.select(ColName.HASH_COL).distinct().collectAsList();
+		List<Row> uniqueHashes = newTraining.select(ColName.HASH_COL).groupBy(ColName.HASH_COL).agg(
+			functions.count(ColName.HASH_COL)
+			.alias("count"))
+			.filter("count>8").collectAsList();
 		for (Row row : uniqueHashes) {
 			Object key = row.get(0);
 			Dataset<Row> tupleList = newTraining.filter(newTraining.col(ColName.HASH_COL).equalTo(key))
@@ -208,45 +214,19 @@ public class Canopy implements Serializable, Comparable<Canopy> {
 			//LOG.debug(" canopy size is " + tupleList.count() + " for  hash "
 			//		+ key);
 			can.hash = key;
+			can.trainingSize = (long) row.get(1);
 			returnCanopies.add(can);
 		}
 		return returnCanopies;	
 	}
 	
-	public long estimateCanopies(int i) {
-		/*
-		//long ts = System.currentTimeMillis();	
-		Set<Object> hashes = new HashSet<Object>();
-		for (Row r : training) {
-			hashes.add(function.apply(r, context.fieldName));
-		}
-		*/
-		/*
-		List<Row> newTraining = function.apply(training, context.fieldName, ColName.HASH_COL);
-		long uniqueHashes = (long) newTraining.select(functions.approxCountDistinct(
-				newTraining.col(ColName.HASH_COL))).takeAsList(1).get(0).get(0);
-		LOG.debug("estimateCanopies" + (System.currentTimeMillis() - ts) + " and count is " + uniqueHashes);
-		/*newTraining.agg(
-				functions.approxCountDistinct(newTraining.col(ColName.HASH_COL))).show();
-		long ts1 = System.currentTimeMillis();
-		long uniqueHashes = newTraining.select(newTraining.col(ColName.HASH_COL)).distinct().count(); //.distinct().count();
-		LOG.warn("estimateCanopies" + (System.currentTimeMillis() - ts1) + " and count is " + uniqueHashes);
-*/
-		/*long uniqueHashes = hashes.size();
-		LOG.debug("estimateCanopies- unique hash count is " + uniqueHashes);
-
-		return uniqueHashes;
-		*/
-
-		
-		return (long) training.agg(functions.approx_count_distinct(ColName.HASH_COL + i)).takeAsList(1).get(0).get(0);
-		
-		//return 2;
-			
-	}
+	
 
 	public long getTrainingSize() {
-		return training.count(); 
+		if (trainingSize == -1) {
+			trainingSize = training.count();
+		}
+		return trainingSize;
 	}
 
 	/*
@@ -279,7 +259,7 @@ public class Canopy implements Serializable, Comparable<Canopy> {
 		//the function is applied to both columns
 		//if hash is equal, they are not going to be eliminated
 		//filter on hash equal and count 
-		LOG.debug("Applying " + function.getName() + " to " + context.fieldName);
+		//LOG.debug("Applying " + function.getName() + " to " + context.fieldName);
 		dupeRemaining = new ArrayList<Row>();
 		for(Row r: dupeN) {
 			Object hash1 = function.apply(r, context.fieldName);
@@ -358,18 +338,8 @@ public class Canopy implements Serializable, Comparable<Canopy> {
 	}
 
 
-	public static Canopy estimateCanopiesList(Dataset<Row> t, List<Canopy> canopies) {
-		Collections.sort(canopies);
-		for (int i=0; i < canopies.size(); ++i) {	
-			Canopy c = canopies.get(i);
-			t = t.withColumn(ColName.HASH_COL + i, functions.callUDF(c.function.getName(), 
-				t.col(c.context.fieldName)));
-		}
-		Map<String, String> exprs = new HashMap<String, String>();
-		for (int i=0; i < canopies.size(); ++i) {	
-			exprs.put(ColName.HASH_COL + i, "approx_count_distinct");			
-		}
-		t = t.agg(exprs);
+	public static Canopy estimateCanopies(Dataset<Row> t, Map<Canopy, Integer> canopies) {
+		/*Collections.sort(canopies);
 		//t.show(true);
 		Row r = t.takeAsList(1).get(0);
 		for (int i=0; i < canopies.size(); ++i) {
@@ -377,11 +347,30 @@ public class Canopy implements Serializable, Comparable<Canopy> {
 		}
 		return null;		
 		//return 2;
-			
+		*/
+		List<Canopy> sortedCanopies = new ArrayList<Canopy>();
+		sortedCanopies.addAll(canopies.keySet());
+		Collections.sort(sortedCanopies);
+		for (Canopy c: sortedCanopies) {
+			LOG.debug("estimating for " + c);
+			int index = canopies.get(c);
+			Dataset<Row> r = t.select(ColName.HASH_COL + index).groupBy(ColName.HASH_COL + index).agg(functions.count(ColName.HASH_COL+index)
+				.alias("count"+index));
+			if (r.count() > 0) {
+				return c;
+			}
+		}
+		return null;	
+
+		/*
+		newTraining.select(ColName.HASH_COL).groupBy(ColName.HASH_COL).agg(
+			functions.count(ColName.HASH_COL)
+			.alias("count"))
+			.filter("count>100").collectAsList();*/
 	}
 
-	public static Dataset<Row> apply(Dataset<Row> t, List<Canopy> canopies) {
-		for (int i=0; i < canopies.size(); ++i) {	
+	public static Dataset<Row> apply(Dataset<Row> t, Map<Integer, Canopy> canopies) {
+		for (Integer i: canopies.keySet()) {	
 			Canopy c = canopies.get(i);
 			t = t.withColumn(ColName.HASH_COL + i, functions.callUDF(c.function.getName(), 
 					t.col(c.context.fieldName)));
