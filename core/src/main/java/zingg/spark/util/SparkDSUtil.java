@@ -10,10 +10,11 @@ import scala.collection.JavaConverters;
 import zingg.client.Arguments;
 import zingg.client.FieldDefinition;
 import zingg.client.MatchType;
-import zingg.client.ZFrame;
+import zingg.client.SparkFrame;
 import zingg.client.pipe.Pipe;
 import zingg.client.util.ColName;
 import zingg.client.util.ColValues;
+import zingg.util.DSUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,44 +23,17 @@ import java.util.stream.Collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public abstract class DSUtil<D, R, C> {
+public class SparkDSUtil extends DSUtil<Dataset<Row>, Row, Column>{
 
-    public Log LOG = LogFactory.getLog(DSUtil.class);	
-
-	public String[] getPrefixedColumns(String[] cols) {
-		for (int i=0; i < cols.length; ++i) {
-			cols[i] = ColName.COL_PREFIX + cols[i];
-		}
-		return cols;
-	}
-
-	public abstract C gt(ZFrame<D, R, C> a, String c);
+    public static final Log LOG = LogFactory.getLog(SparkDSUtil.class);	
 
 	
 
-	public ZFrame<D, R, C> join(ZFrame<D, R, C> lines, ZFrame<D, R, C> lines1, String joinColumn, boolean filter) {
-		ZFrame<D, R, C> pairs = lines.join(lines1, joinColumn);
-		//in training, we only need that record matches only with lines bigger than itself
-		//in the case of normal as well as in the case of linking
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("pairs length " + pairs.count());
-		}
-		if (filter) {
-			pairs = pairs.filter(gt(pairs, joinColumn));	
-		}	
-		return pairs;
+	public Column gt(SparkFrame pairs, String c) {
+		return pairs.col(ColName.ID_COL).gt(pairs.col(ColName.COL_PREFIX + ColName.ID_COL));
 	}
 
-	public ZFrame<D, R, C> joinZColFirst(ZFrame<D, R, C> lines, ZFrame<D, R, C> lines1, String joinColumn, boolean filter) {
-		D pairs = lines.joinRight(lines1, lines.col(ColName.COL_PREFIX + joinColumn).equalTo(lines1.col(joinColumn)), "right");
-		//in training, we only need that record matches only with lines bigger than itself
-		//in the case of normal as well as in the case of linking
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("pairs length " + pairs.count());
-		}
-		if (filter) pairs = pairs.filter(pairs.col(ColName.ID_COL).gt(pairs.col(ColName.COL_PREFIX + ColName.ID_COL)));		
-		return pairs;
-	}
+	
 
 	/*
 

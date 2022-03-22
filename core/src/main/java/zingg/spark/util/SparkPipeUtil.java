@@ -1,4 +1,4 @@
-package zingg.util;
+package zingg.spark.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,6 +44,8 @@ import com.datastax.spark.connector.cql.TableDef;
 
 import com.datastax.spark.connector.cql.*;
 import zingg.scala.DFUtil;
+import zingg.util.PipeUtil;
+import zingg.util.PipeUtilBase;
 
 //import com.datastax.spark.connector.cql.*;
 //import org.elasticsearch.spark.sql.api.java.JavaEsSparkSQL;
@@ -51,10 +53,21 @@ import zingg.scala.DFUtil;
 
 public class SparkPipeUtil implements PipeUtilBase<Dataset<Row>, SparkSession>{
 
-	public  final Log LOG = LogFactory.getLog(PipeUtil.class);
+	SparkSession sparkSession;
 
-	private DataFrameReader getReader(SparkSession spark, Pipe p) {
-		DataFrameReader reader = spark.read();
+	public  final Log LOG = LogFactory.getLog(SparkPipeUtil.class);
+
+	public SparkPipeUtil(SparkSession spark) {
+		this.sparkSession = spark;
+	}
+	
+
+	public void setSession(SparkSession session){
+		this.sparkSession = session;
+	}
+
+	private DataFrameReader getReader(Pipe p) {
+		DataFrameReader reader = getSession().read();
 
 		LOG.warn("Reading input " + p.getFormat().type());
 		reader = reader.format(p.getFormat().type());
@@ -83,19 +96,19 @@ public class SparkPipeUtil implements PipeUtilBase<Dataset<Row>, SparkSession>{
 		return input;
 	}
 
-	public  Dataset<Row> readInternal(SparkSession spark, Pipe p, boolean addSource) {
-		DataFrameReader reader = getReader(spark, p);
+	public  Dataset<Row> readInternal(Pipe p, boolean addSource) {
+		DataFrameReader reader = getReader(p);
 		return read(reader, p, addSource);		
 	}
 
 	
-	public  Dataset<Row> readInternal(SparkSession spark, boolean addLineNo,
+	public  Dataset<Row> readInternal(boolean addLineNo,
 			boolean addSource, Pipe... pipes) {
 		Dataset<Row> input = null;
 
 		for (Pipe p : pipes) {
 			if (input == null) {
-				input = readInternal(spark, p, addSource);
+				input = readInternal(p, addSource);
 				LOG.debug("input size is " + input.count());				
 			} else {
 					input = input.union(readInternal(spark, p, addSource));
@@ -109,14 +122,18 @@ public class SparkPipeUtil implements PipeUtilBase<Dataset<Row>, SparkSession>{
 		return input;
 	}
 
-	public  Dataset<Row> read(SparkSession spark, boolean addLineNo, boolean addSource, Pipe... pipes) {
-		Dataset<Row> rows = readInternal(spark, addLineNo, addSource, pipes);
+	public SparkSession getSession() {
+		return sparkSession;
+	}
+
+	public  Dataset<Row> read(boolean addLineNo, boolean addSource, Pipe... pipes) {
+		Dataset<Row> rows = readInternal(addLineNo, addSource, pipes);
 		rows = rows.persist(StorageLevel.MEMORY_ONLY());
 		return rows;
 	}
 
-	public  Dataset<Row> sample(SparkSession spark, Pipe p) {
-		DataFrameReader reader = getReader(spark, p);
+	public  Dataset<Row> sample(Pipe p) {
+		DataFrameReader reader = getReader(p);
 		reader.option("inferSchema", true);
 		reader.option("mode", "DROPMALFORMED");
 		LOG.info("reader is ready to sample with inferring " + p.get(FilePipe.LOCATION));
@@ -125,14 +142,14 @@ public class SparkPipeUtil implements PipeUtilBase<Dataset<Row>, SparkSession>{
 		// LOG.warn("inferred schema " + input.schema());
 		List<Row> values = input.takeAsList(10);
 		values.forEach(r -> LOG.warn(r));
-		Dataset<Row> ret = spark.createDataFrame(values, input.schema());
+		Dataset<Row> ret = getSession().createDataFrame(values, input.schema());
 		return ret;
 
 	}
 
-	public Dataset<Row> read(SparkSession spark, boolean addLineNo, int numPartitions,
+	public Dataset<Row> read(boolean addLineNo, int numPartitions,
 			boolean addSource, Pipe... pipes) {
-		Dataset<Row> rows = readInternal(spark, addLineNo, addSource, pipes);
+		Dataset<Row> rows = readInternal(addLineNo, addSource, pipes);
 		rows = rows.repartition(numPartitions);
 		rows = rows.persist(StorageLevel.MEMORY_ONLY());
 		return rows;

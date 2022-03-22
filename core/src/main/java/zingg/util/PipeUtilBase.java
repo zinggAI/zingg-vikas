@@ -7,16 +7,16 @@ import zingg.client.pipe.Pipe;
 public interface PipeUtilBase<T, R> {
 	
 
-	public T readInternal(R spark, Pipe p, boolean addSource);
+	public T readInternal(Pipe p, boolean addSource);
 
-	public T readInternal(R spark, boolean addLineNo,
+	public T readInternal(boolean addLineNo,
 			boolean addSource, Pipe... pipes);
 
-	public T read(R spark, boolean addLineNo, boolean addSource, Pipe... pipes);
+	public T read(boolean addLineNo, boolean addSource, Pipe... pipes);
 
-	public T sample(R spark, Pipe p) ;
+	public T sample(Pipe p) ;
 
-	public T read(R spark, boolean addLineNo, int numPartitions,
+	public T read(boolean addLineNo, int numPartitions,
 			boolean addSource, Pipe... pipes);
 
 	public void write(T toWriteOrig, Arguments args, Pipe... pipes);
@@ -32,4 +32,8 @@ public interface PipeUtilBase<T, R> {
 	public Pipe getBlockingTreePipe(Arguments args);
 
 	public String getPipesAsString(Pipe[] pipes);
+
+	public R getSession();
+
+	public void setSession(R session);
 }

@@ -26,14 +26,15 @@ import zingg.feature.FeatureFactory;
 import zingg.hash.HashFunction;
 
 import zingg.util.HashUtil;
-import zingg.util.PipeUtil;
+import zingg.util.PipeUtilBase;
 
-public abstract class ZinggBase implements Serializable, IZingg {
+//Spark Session
+//Dataset
+public abstract class ZinggBase<T,D> implements Serializable, IZingg {
 
     protected Arguments args;
 	
-    protected JavaSparkContext ctx;
-	protected SparkSession spark;
+    protected T context;
     protected static String name;
     protected ZinggOptions zinggOptions;
     protected ListMap<DataType, HashFunction> hashFunctions;
@@ -45,41 +46,17 @@ public abstract class ZinggBase implements Serializable, IZingg {
 
     @Override
     public void init(Arguments args, String license)
-        throws ZinggClientException {
-        startTime = System.currentTimeMillis();
-        this.args = args;
-        try{
-            spark = SparkSession
-                .builder()
-                .appName("Zingg"+args.getJobId())
-                .getOrCreate();
-            ctx = new JavaSparkContext(spark.sparkContext());
-            JavaSparkContext.jarOfClass(IZingg.class);
-            LOG.debug("Context " + ctx.toString());
-            initHashFns();
-            loadFeatures();
-            ctx.setCheckpointDir("/tmp/checkpoint");	
-        }
-        catch(Throwable e) {
-            if (LOG.isDebugEnabled()) e.printStackTrace();
-            throw new ZinggClientException(e.getMessage());
-        }
+        throws ZinggClientException {}
+
+    public void setPipeUtil(PipeUtilBase<D,T> pipeUtil){
+
     }
 
-
-    @Override
-    public void cleanup() throws ZinggClientException {
-        if (ctx != null) ctx.stop();
+    public PipeUtilBase<D,T> getPipeUtil() {
+        return null;
     }
-
+   
     void initHashFns() throws ZinggClientException {
-		try {
-			//functions = Util.getFunctionList(this.functionFile);
-			hashFunctions = HashUtil.getHashFunctionList(this.hashFunctionFile, spark);
-		} catch (Exception e) {
-			if (LOG.isDebugEnabled()) e.printStackTrace();
-			throw new ZinggClientException("Unable to initialize base functions");
-		}		
 	}
 
     public void loadFeatures() throws ZinggClientException {
@@ -104,10 +81,8 @@ public abstract class ZinggBase implements Serializable, IZingg {
 		}
 	}
 
-    public void copyContext(ZinggBase b) {
+    public void copyContext(ZinggBase<T> b) {
             this.args = b.args;
-            this.ctx = b.ctx;
-            this.spark = b.spark;
             this.featurers = b.featurers;
             this.hashFunctions = b.hashFunctions;
     }
@@ -118,8 +93,8 @@ public abstract class ZinggBase implements Serializable, IZingg {
 		Analytics.track(Metric.TOTAL_FIELDS_COUNT, args.getFieldDefinition().size(), collectMetrics);
         Analytics.track(Metric.MATCH_FIELDS_COUNT, DSUtil.getFieldDefinitionFiltered(args, MatchType.DONT_USE).size(),
                 collectMetrics);
-		Analytics.track(Metric.DATA_FORMAT, PipeUtil.getPipesAsString(args.getData()), collectMetrics);
-		Analytics.track(Metric.OUTPUT_FORMAT, PipeUtil.getPipesAsString(args.getOutput()), collectMetrics);
+		Analytics.track(Metric.DATA_FORMAT, getPipeUtil().getPipesAsString(args.getData()), collectMetrics);
+		Analytics.track(Metric.OUTPUT_FORMAT, getPipeUtil().getPipesAsString(args.getOutput()), collectMetrics);
 
 		Analytics.postEvent(zinggOptions.getValue(), collectMetrics);
 	}
@@ -148,20 +123,13 @@ public abstract class ZinggBase implements Serializable, IZingg {
         this.featurers = featurers;
     }
 
-    public JavaSparkContext getCtx() {
-        return this.ctx;
+    
+    public T getContext() {
+        return this.context;
     }
 
-    public void setCtx(JavaSparkContext ctx) {
-        this.ctx = ctx;
-    }
-
-    public SparkSession getSpark() {
-        return this.spark;
-    }
-
-    public void setSpark(SparkSession spark) {
-        this.spark = spark;
+    public void setContext(T spark) {
+        this.context = spark;
     }
     public void setName(String name) {
         this.name = name;
