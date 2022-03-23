@@ -111,4 +111,17 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
     public ZFrame<Dataset<Row>, Row, Column> repartition(int nul){
         return new SparkFrame(df.repartition(nul));
     }
+
+    public Column gt(String c) {
+		return df.col(c).gt(df.col(ColName.COL_PREFIX + c));
+	}
+
+	public Column equalTo(String c, String e){
+		return df.col(c).equalTo(e);
+	}
+
+	public Column notEqual(String c, String e) {
+		return df.col(c).notEqual(e);
+	}
+
 }

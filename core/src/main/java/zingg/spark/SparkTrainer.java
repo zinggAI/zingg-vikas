@@ -1,13 +1,10 @@
-package zingg.spark;
+package zingg;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-
-import zingg.Trainer;
-import zingg.ZinggBase;
 import zingg.block.Canopy;
 import zingg.block.Tree;
 import zingg.model.Model;
@@ -24,17 +21,12 @@ import zingg.util.DSUtil;
 import zingg.util.ModelUtil;
 import zingg.util.PipeUtilBase;
 
-import org.apache.spark.sql.SparkSession;
-
-public class SparkTrainer extends Trainer<SparkSession>{
+public abstract class SparkTrainer<D,S> extends ZinggBase<S,D>{
 
 	protected static String name = "zingg.Trainer";
-	public static final Log LOG = LogFactory.getLog(Trainer.class);    
+	public static final Log LOG = LogFactory.getLog(SparkTrainer.class);    
 
-    public SparkTrainer() {
-        setZinggOptions(ZinggOptions.TRAIN);
-    }
-
+    
 	public void execute() throws ZinggClientException {
         try {
 			LOG.info("Reading inputs for training phase ...");
@@ -50,7 +42,7 @@ public class SparkTrainer extends Trainer<SparkSession>{
 			LOG.warn("Training on positive pairs - " + positives.count());
 			LOG.warn("Training on negative pairs - " + negatives.count());
 				
-			Dataset<Row> testData = PipeUtilBase.read(spark, true, args.getNumPartitions(), false, args.getData());
+			D testData = getPipeUtil().read(true, args.getNumPartitions(), false, args.getData());
 			Tree<Canopy> blockingTree = BlockingTreeUtil.createBlockingTreeFromSample(testData,  positives, 0.5,
 					-1, args, hashFunctions);
 			if (blockingTree == null || blockingTree.getSubTrees() == null) {

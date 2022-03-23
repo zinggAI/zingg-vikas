@@ -37,12 +37,6 @@ public abstract class DSUtil<S, D, R, C> {
 		return lines.toDF(getPrefixedColumns(lines.columns()));
 	}
 
-	public abstract C gt(ZFrame<D, R, C> a, String c);
-
-	public abstract C equalTo(ZFrame<D, R, C> a, String c, String e);
-
-	public abstract C notEqual(ZFrame<D, R, C> a, String c, String e);
-
 	
 
 	public ZFrame<D, R, C> join(ZFrame<D, R, C> lines, ZFrame<D, R, C> lines1, String joinColumn, boolean filter) {
@@ -53,7 +47,7 @@ public abstract class DSUtil<S, D, R, C> {
 			LOG.debug("pairs length " + pairs.count());
 		}
 		if (filter) {
-			pairs = pairs.filter(gt(pairs, joinColumn));	
+			pairs = pairs.filter(pairs.gt(joinColumn));	
 		}	
 		return pairs;
 	}
@@ -65,7 +59,7 @@ public abstract class DSUtil<S, D, R, C> {
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("pairs length " + pairs.count());
 		}
-		if (filter) pairs = pairs.filter(gt(pairs, ColName.ID_COL));		
+		if (filter) pairs = pairs.filter(pairs.gt(ColName.ID_COL));		
 		return pairs;
 	}
 
@@ -94,8 +88,8 @@ public abstract class DSUtil<S, D, R, C> {
 	public  ZFrame<D, R, C> joinWithItselfSourceSensitive(ZFrame<D, R, C> lines, String joinColumn, Arguments args) throws Exception {
 		ZFrame<D, R, C> lines1 = getPrefixedColumnsDS(lines).cache();
 		String[] sourceNames = args.getPipeNames();
-		lines = lines.filter(equalTo(lines, joinColumn, sourceNames[0]));
-		lines1 = lines1.filter(notEqual(lines1, ColName.COL_PREFIX + ColName.SOURCE_COL, sourceNames[0]));
+		lines = lines.filter(lines.equalTo(joinColumn, sourceNames[0]));
+		lines1 = lines1.filter(lines1.notEqual(ColName.COL_PREFIX + ColName.SOURCE_COL, sourceNames[0]));
 		return join(lines, lines1, joinColumn, false);
 	}
 
@@ -175,7 +169,7 @@ public abstract class DSUtil<S, D, R, C> {
 			if (! (def.getMatchType() == null || def.getMatchType().equals(MatchType.DONT_USE))) {
 				//columns.add(def.getFieldName());
 				String field = def.getFieldName();
-				 a= a.filter(equalTo(a, field,ColName.COL_PREFIX + field));		
+				 a= a.filter(a.equalTo(field,ColName.COL_PREFIX + field));		
 			}
 		}
 		LOG.info("All equals done");

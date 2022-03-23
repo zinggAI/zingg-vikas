@@ -120,7 +120,7 @@ public class SparkPipeUtil implements PipeUtilBase<SparkSession, Dataset<Row>, R
 		// we will probably need to create row number as string with pipename/id as
 		// suffix
 		if (addLineNo)
-			input = DFUtil.addRowNumber(input.df(), getSession());
+			input = new SparkFrame(DFUtil.addRowNumber(input.df(), getSession()));
 		// we need to transform the input here by using stop words
 		return input;
 	}

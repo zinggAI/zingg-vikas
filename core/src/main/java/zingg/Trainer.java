@@ -8,7 +8,7 @@ import org.apache.spark.sql.Row;
 import zingg.block.Canopy;
 import zingg.block.Tree;
 import zingg.model.Model;
-
+import zingg.client.ZFrame;
 import zingg.client.ZinggClientException;
 import zingg.client.ZinggOptions;
 import zingg.util.Analytics;
@@ -21,7 +21,7 @@ import zingg.util.DSUtil;
 import zingg.util.ModelUtil;
 import zingg.util.PipeUtilBase;
 
-public abstract class Trainer<D,S> extends ZinggBase<S,D>{
+public abstract class Trainer<S,D,R,C> extends ZinggBase<S,D,R,C>{
 
 	protected static String name = "zingg.Trainer";
 	public static final Log LOG = LogFactory.getLog(Trainer.class);    
@@ -32,12 +32,12 @@ public abstract class Trainer<D,S> extends ZinggBase<S,D>{
 			LOG.info("Reading inputs for training phase ...");
 			LOG.info("Initializing learning similarity rules");
 			
-			Dataset<Row> positives = null;
-			Dataset<Row> negatives = null;
-			Dataset<Row> tra = DSUtil.getTraining(spark, args);
-			tra = DSUtil.joinWithItself(tra, ColName.CLUSTER_COLUMN, true);
+			ZFrame<D,R,C> positives = null;
+			ZFrame<D,R,C> negatives = null;
+			ZFrame<D,R,C> tra = getDSUtil().getTraining(getPipeUtil(), args);
+			tra = getDSUtil().joinWithItself(tra, ColName.CLUSTER_COLUMN, true);
 			tra = tra.cache();
-			positives = tra.filter(tra.col(ColName.MATCH_FLAG_COL).equalTo(ColValues.MATCH_TYPE_MATCH));
+			positives = tra.filter(tra.equalTo(ColName.MATCH_FLAG_COL, ColValues.MATCH_TYPE_MATCH));
 			negatives = tra.filter(tra.col(ColName.MATCH_FLAG_COL).equalTo(ColValues.MATCH_TYPE_NOT_A_MATCH));
 			LOG.warn("Training on positive pairs - " + positives.count());
 			LOG.warn("Training on negative pairs - " + negatives.count());

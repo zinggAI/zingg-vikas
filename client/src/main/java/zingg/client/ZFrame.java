@@ -43,5 +43,11 @@ public interface ZFrame<T, R, C> {
     public ZFrame<T,R,C> withColumn(String s, int c);
 
     public ZFrame<T,R,C> repartition(int num);
+
+    public C gt(String c);
+
+	public C equalTo(String c, String e);
+
+	public C notEqual(String c, String e);
     
 }

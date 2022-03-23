@@ -30,18 +30,7 @@ public class SparkDSUtil extends DSUtil<SparkSession, Dataset<Row>, Row, Column>
 
 	
 
-	public Column gt(ZFrame<Dataset<Row>, Row, Column> pairs, String c) {
-		return pairs.col(ColName.ID_COL).gt(pairs.col(ColName.COL_PREFIX + ColName.ID_COL));
-	}
-
-	public Column equalTo(ZFrame<Dataset<Row>, Row, Column> a, String c, String e){
-		return a.col(ColName.SOURCE_COL).equalTo(e);
-	}
-
-	public Column notEqual(ZFrame<Dataset<Row>, Row, Column> a, String c, String e) {
-		return a.col(ColName.SOURCE_COL).notEqual(e);
-	}
-
+	
 	
 
 	
