@@ -8,9 +8,12 @@ import java.util.stream.Collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataType;
 
+import zingg.ZinggBase;
 import zingg.client.Arguments;
 import zingg.client.FieldDefinition;
 import zingg.client.IZingg;
@@ -28,10 +31,10 @@ import zingg.hash.HashFunction;
 import zingg.util.HashUtil;
 import zingg.util.PipeUtil;
 
-public abstract class SparkBase extends ZinggBase<SparkSession>{
+public abstract class SparkBase extends ZinggBase<SparkSession, Dataset<Row>>{
 
     JavaSparkContext ctx;
-    public static final Log LOG = LogFactory.getLog(SparkZinggBase.class);
+    public static final Log LOG = LogFactory.getLog(SparkBase.class);
 
     @Override
     public void init(Arguments args, String license)
@@ -56,6 +59,16 @@ public abstract class SparkBase extends ZinggBase<SparkSession>{
         }
     }
 
+    protected void initHashFns() throws ZinggClientException {
+		try {
+			//functions = Util.getFunctionList(this.functionFile);
+			hashFunctions = HashUtil.getHashFunctionList(hashFunctionFile, getContext());
+		} catch (Exception e) {
+			if (LOG.isDebugEnabled()) e.printStackTrace();
+			throw new ZinggClientException("Unable to initialize base functions");
+		}		
+	}
+
 
     @Override
     public void cleanup() throws ZinggClientException {
@@ -63,9 +76,9 @@ public abstract class SparkBase extends ZinggBase<SparkSession>{
     }
 
    
-    public void copyContext(ZinggBase<SparkSession> b) {
+    public void copyContext(ZinggBase<SparkSession, Dataset<Row>> b) {
             super.copyContext(b);
-            this.context = b.context;
+            this.context = b.getContext();
     }
 
 	

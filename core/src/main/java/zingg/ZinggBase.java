@@ -44,9 +44,9 @@ public abstract class ZinggBase<T,D> implements Serializable, IZingg {
 
     public static final Log LOG = LogFactory.getLog(ZinggBase.class);
 
-    @Override
-    public void init(Arguments args, String license)
-        throws ZinggClientException {}
+    
+    public abstract void init(Arguments args, String license)
+        throws ZinggClientException;
 
     public void setPipeUtil(PipeUtilBase<D,T> pipeUtil){
 
@@ -56,7 +56,7 @@ public abstract class ZinggBase<T,D> implements Serializable, IZingg {
         return null;
     }
    
-    void initHashFns() throws ZinggClientException {
+    protected void initHashFns() throws ZinggClientException {
 	}
 
     public void loadFeatures() throws ZinggClientException {
@@ -81,7 +81,7 @@ public abstract class ZinggBase<T,D> implements Serializable, IZingg {
 		}
 	}
 
-    public void copyContext(ZinggBase<T> b) {
+    public void copyContext(ZinggBase<T,D> b) {
             this.args = b.args;
             this.featurers = b.featurers;
             this.hashFunctions = b.hashFunctions;
