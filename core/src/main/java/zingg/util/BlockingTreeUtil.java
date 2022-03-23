@@ -83,11 +83,11 @@ public class BlockingTreeUtil {
 		objList.add(byteArray);
 		JavaRDD<Row> rowRDD = ctx.parallelize(objList).map((Object row) -> RowFactory.create(row));
 		Dataset<Row> df = spark.sqlContext().createDataFrame(rowRDD, schema).toDF().coalesce(1);
-		PipeUtil.write(df, args, ctx, PipeUtil.getBlockingTreePipe(args));
+		PipeUtilBase.write(df, args, ctx, PipeUtilBase.getBlockingTreePipe(args));
 	}
 
 	public static Tree<Canopy> readBlockingTree(SparkSession spark, Arguments args) throws Exception {
-		Dataset<Row> tree = PipeUtil.read(spark, false, args.getNumPartitions(), false, PipeUtil.getBlockingTreePipe(args));
+		Dataset<Row> tree = PipeUtilBase.read(spark, false, args.getNumPartitions(), false, PipeUtilBase.getBlockingTreePipe(args));
 		byte [] byteArrayBack = (byte[]) tree.head().get(0);
 		Tree<Canopy> blockingTree = null;
 		blockingTree =  (Tree<Canopy>) Util.revertObjectFromByteArray(byteArrayBack);

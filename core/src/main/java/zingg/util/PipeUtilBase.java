@@ -1,28 +1,28 @@
 package zingg.util;
 
 import zingg.client.Arguments;
+import zingg.client.ZFrame;
 import zingg.client.pipe.Pipe;
-//dataset
+
 //spark session 
-public interface PipeUtilBase<T, R> {
+//dataset
+public interface PipeUtilBase<S, D, R, C> {
 	
 
-	public T readInternal(Pipe p, boolean addSource);
+	public ZFrame<D, R, C> readInternal(Pipe p, boolean addSource);
 
-	public T readInternal(boolean addLineNo,
+	public  ZFrame<D, R, C> readInternal(boolean addLineNo,
 			boolean addSource, Pipe... pipes);
 
-	public T read(boolean addLineNo, boolean addSource, Pipe... pipes);
+	public  ZFrame<D, R, C> read(boolean addLineNo, boolean addSource, Pipe... pipes);
 
-	public T sample(Pipe p) ;
-
-	public T read(boolean addLineNo, int numPartitions,
+	
+	public  ZFrame<D, R, C> read(boolean addLineNo, int numPartitions,
 			boolean addSource, Pipe... pipes);
 
-	public void write(T toWriteOrig, Arguments args, Pipe... pipes);
+	public void write(ZFrame<D, R, C> toWriteOrig, Arguments args, Pipe... pipes);
 
-	public void writePerSource(T toWrite, Arguments args, Pipe[] pipes);
-
+	
 	public Pipe getTrainingDataUnmarkedPipe(Arguments args);
 
 	public Pipe getTrainingDataMarkedPipe(Arguments args);
@@ -33,7 +33,7 @@ public interface PipeUtilBase<T, R> {
 
 	public String getPipesAsString(Pipe[] pipes);
 
-	public R getSession();
+	public S getSession();
 
-	public void setSession(R session);
+	public void setSession(S session);
 }

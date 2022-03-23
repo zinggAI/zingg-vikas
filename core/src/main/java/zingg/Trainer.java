@@ -19,7 +19,7 @@ import zingg.util.Metric;
 import zingg.util.BlockingTreeUtil;
 import zingg.util.DSUtil;
 import zingg.util.ModelUtil;
-import zingg.util.PipeUtil;
+import zingg.util.PipeUtilBase;
 
 public abstract class Trainer<D,S> extends ZinggBase<S,D>{
 

@@ -19,7 +19,7 @@ import zingg.client.pipe.Pipe;
 import zingg.client.util.ColName;
 import zingg.client.util.ColValues;
 import zingg.util.DSUtil;
-import zingg.util.PipeUtil;
+import zingg.util.PipeUtilBase;
 import zingg.util.RowAdapter;
 import zingg.util.RowWrapper;
 import freemarker.ext.rhino.RhinoWrapper;
@@ -39,7 +39,7 @@ public class Documenter extends ZinggBase {
 	public void execute() throws ZinggClientException {
 		try {
 			LOG.info("Document generation in progress");
-			Dataset<Row> markedRecords = PipeUtil.read(spark, false, false, PipeUtil.getTrainingDataMarkedPipe(args));
+			Dataset<Row> markedRecords = PipeUtilBase.read(spark, false, false, PipeUtilBase.getTrainingDataMarkedPipe(args));
 			markedRecords = markedRecords.cache();
 			//List<Column> displayCols = DSUtil.getFieldDefColumns(markedRecords, args, false);
 			List<Row> clusterIDs = markedRecords.select(ColName.CLUSTER_COLUMN).distinct().collectAsList();

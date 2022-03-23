@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -29,9 +30,9 @@ import zingg.feature.FeatureFactory;
 import zingg.hash.HashFunction;
 
 import zingg.util.HashUtil;
-import zingg.util.PipeUtil;
+import zingg.util.PipeUtilBase;
 
-public abstract class SparkBase extends ZinggBase<SparkSession, Dataset<Row>>{
+public abstract class SparkBase extends ZinggBase<SparkSession, Dataset<Row>, Row, Column>{
 
     JavaSparkContext ctx;
     public static final Log LOG = LogFactory.getLog(SparkBase.class);
@@ -76,7 +77,7 @@ public abstract class SparkBase extends ZinggBase<SparkSession, Dataset<Row>>{
     }
 
    
-    public void copyContext(ZinggBase<SparkSession, Dataset<Row>> b) {
+    public void copyContext(ZinggBase<SparkSession, Dataset<Row>, Row, Column> b) {
             super.copyContext(b);
             this.context = b.getContext();
     }

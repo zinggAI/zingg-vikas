@@ -30,7 +30,7 @@ import zingg.util.BlockingTreeUtil;
 import zingg.util.DSUtil;
 import zingg.util.GraphUtil;
 import zingg.util.ModelUtil;
-import zingg.util.PipeUtil;
+import zingg.util.PipeUtilBase;
 
 public class Matcher extends ZinggBase{
 
@@ -42,7 +42,7 @@ public class Matcher extends ZinggBase{
     }
 
 	protected Dataset<Row> getTestData() {
-		return PipeUtil.read(spark, true, args.getNumPartitions(), true, args.getData());
+		return PipeUtilBase.read(spark, true, args.getNumPartitions(), true, args.getData());
 	}
 
 	protected Dataset<Row> getBlocked(Dataset<Row> testData) throws Exception{
@@ -195,7 +195,7 @@ public class Matcher extends ZinggBase{
 			}
 			graphWithScores = DSUtil.select(graphWithScores, columns);
 			*/
-			PipeUtil.write(graphWithScores, args, ctx, args.getOutput());
+			PipeUtilBase.write(graphWithScores, args, ctx, args.getOutput());
 		}
 		}
 		catch(Exception e) {

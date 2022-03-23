@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.sql.Column;
 import org.apache.spark.sql.DataFrameReader;
 import org.apache.spark.sql.DataFrameWriter;
 import org.apache.spark.sql.Dataset;
@@ -23,6 +24,8 @@ import org.apache.spark.storage.StorageLevel;
 
 //import zingg.scala.DFUtil;
 import zingg.client.Arguments;
+import zingg.client.SparkFrame;
+import zingg.client.ZFrame;
 import zingg.client.util.ColName;
 import zingg.client.pipe.CassandraPipe;
 import zingg.client.pipe.ElasticPipe;
@@ -44,14 +47,14 @@ import com.datastax.spark.connector.cql.TableDef;
 
 import com.datastax.spark.connector.cql.*;
 import zingg.scala.DFUtil;
-import zingg.util.PipeUtil;
+import zingg.util.PipeUtilBase;
 import zingg.util.PipeUtilBase;
 
 //import com.datastax.spark.connector.cql.*;
 //import org.elasticsearch.spark.sql.api.java.JavaEsSparkSQL;
 //import zingg.scala.DFUtil;
 
-public class SparkPipeUtil implements PipeUtilBase<Dataset<Row>, SparkSession>{
+public class SparkPipeUtil implements PipeUtilBase<SparkSession, Dataset<Row>, Row, Column>{
 
 	SparkSession sparkSession;
 
@@ -81,7 +84,7 @@ public class SparkPipeUtil implements PipeUtilBase<Dataset<Row>, SparkSession>{
 		return reader;
 	}
 
-	private  Dataset<Row> read(DataFrameReader reader, Pipe p, boolean addSource) {
+	private  ZFrame<Dataset<Row>, Row, Column> read(DataFrameReader reader, Pipe p, boolean addSource) {
 		Dataset<Row> input = null;
 		LOG.warn("Reading " + p);
 		if (p.getProps().containsKey(FilePipe.LOCATION)) {
@@ -93,31 +96,31 @@ public class SparkPipeUtil implements PipeUtilBase<Dataset<Row>, SparkSession>{
 		if (addSource) {
 			input = input.withColumn(ColName.SOURCE_COL, functions.lit(p.getName()));			
 		}
-		return input;
+		return new SparkFrame(input);
 	}
 
-	public  Dataset<Row> readInternal(Pipe p, boolean addSource) {
+	public  ZFrame<Dataset<Row>, Row, Column> readInternal(Pipe p, boolean addSource) {
 		DataFrameReader reader = getReader(p);
 		return read(reader, p, addSource);		
 	}
 
 	
-	public  Dataset<Row> readInternal(boolean addLineNo,
+	public  ZFrame<Dataset<Row>, Row, Column> readInternal(boolean addLineNo,
 			boolean addSource, Pipe... pipes) {
-		Dataset<Row> input = null;
+		ZFrame<Dataset<Row>, Row, Column> input = null;
 
 		for (Pipe p : pipes) {
 			if (input == null) {
 				input = readInternal(p, addSource);
 				LOG.debug("input size is " + input.count());				
 			} else {
-					input = input.union(readInternal(spark, p, addSource));
+					input = input.union(readInternal(p, addSource));
 			}
 		}
 		// we will probably need to create row number as string with pipename/id as
 		// suffix
 		if (addLineNo)
-			input = DFUtil.addRowNumber(input, spark);
+			input = DFUtil.addRowNumber(input.df(), getSession());
 		// we need to transform the input here by using stop words
 		return input;
 	}
@@ -126,38 +129,25 @@ public class SparkPipeUtil implements PipeUtilBase<Dataset<Row>, SparkSession>{
 		return sparkSession;
 	}
 
-	public  Dataset<Row> read(boolean addLineNo, boolean addSource, Pipe... pipes) {
-		Dataset<Row> rows = readInternal(addLineNo, addSource, pipes);
-		rows = rows.persist(StorageLevel.MEMORY_ONLY());
+	public  ZFrame<Dataset<Row>, Row, Column> read(boolean addLineNo, boolean addSource, Pipe... pipes) {
+		ZFrame<Dataset<Row>, Row, Column> rows = readInternal(addLineNo, addSource, pipes);
+		rows = rows.cache();
 		return rows;
 	}
 
-	public  Dataset<Row> sample(Pipe p) {
-		DataFrameReader reader = getReader(p);
-		reader.option("inferSchema", true);
-		reader.option("mode", "DROPMALFORMED");
-		LOG.info("reader is ready to sample with inferring " + p.get(FilePipe.LOCATION));
-		LOG.warn("Reading input of type " + p.getFormat().type());
-		Dataset<Row> input = read(reader, p, false);
-		// LOG.warn("inferred schema " + input.schema());
-		List<Row> values = input.takeAsList(10);
-		values.forEach(r -> LOG.warn(r));
-		Dataset<Row> ret = getSession().createDataFrame(values, input.schema());
-		return ret;
+	
 
-	}
-
-	public Dataset<Row> read(boolean addLineNo, int numPartitions,
+	public ZFrame<Dataset<Row>, Row, Column> read(boolean addLineNo, int numPartitions,
 			boolean addSource, Pipe... pipes) {
-		Dataset<Row> rows = readInternal(addLineNo, addSource, pipes);
+		ZFrame<Dataset<Row>, Row, Column> rows = readInternal(addLineNo, addSource, pipes);
 		rows = rows.repartition(numPartitions);
-		rows = rows.persist(StorageLevel.MEMORY_ONLY());
+		rows = rows.cache();
 		return rows;
 	}
 
-	public  void write(Dataset<Row> toWriteOrig, Arguments args, Pipe... pipes) {
+	public  void write(ZFrame<Dataset<Row>, Row, Column> toWriteOrig, Arguments args, Pipe... pipes) {
 			for (Pipe p: pipes) {
-			Dataset<Row> toWrite = toWriteOrig;
+			Dataset<Row> toWrite = toWriteOrig.df();
 			DataFrameWriter writer = toWrite.write();
 		
 			LOG.warn("Writing output " + p);
@@ -249,15 +239,7 @@ public class SparkPipeUtil implements PipeUtilBase<Dataset<Row>, SparkSession>{
 
 	}
 
-	public  void writePerSource(Dataset<Row> toWrite, Arguments args, Pipe[] pipes ) {
-		List<Row> sources = toWrite.select(ColName.SOURCE_COL).distinct().collectAsList();
-		for (Row r : sources) {
-			Dataset<Row> toWriteNow = toWrite.filter(toWrite.col(ColName.SOURCE_COL).equalTo(r.get(0)));
-			toWriteNow = toWriteNow.drop(ColName.SOURCE_COL);
-			write(toWriteNow, args, pipes);
-		}
-	}
-
+	
 	public  Pipe getTrainingDataUnmarkedPipe(Arguments args) {
 		Pipe p = new Pipe();
 		p.setFormat(Format.PARQUET);

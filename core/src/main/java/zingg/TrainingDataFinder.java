@@ -28,7 +28,7 @@ import zingg.model.Model;
 import zingg.util.BlockingTreeUtil;
 import zingg.util.DSUtil;
 import zingg.util.ModelUtil;
-import zingg.util.PipeUtil;
+import zingg.util.PipeUtilBase;
 
 
 import zingg.scala.TypeTags;
@@ -49,7 +49,7 @@ public class TrainingDataFinder extends ZinggBase{
 
     public void execute() throws ZinggClientException {
 			try{
-				Dataset<Row> data = PipeUtil.read(spark, true, true, args.getData());
+				Dataset<Row> data = PipeUtilBase.read(spark, true, true, args.getData());
 				LOG.warn("Read input data " + data.count());
 				//create 20 pos pairs
 
@@ -138,12 +138,12 @@ public class TrainingDataFinder extends ZinggBase{
 		Dataset<Row> dupes1 = DSUtil.alignDupes(dupesActual, args);
 		Dataset<Row> dupes2 = dupes1.orderBy(ColName.CLUSTER_COLUMN);
 		LOG.debug("uncertain output schema is " + dupes2.schema());
-		PipeUtil.write(dupes2 , args, ctx, getUnmarkedLocation());
+		PipeUtilBase.write(dupes2 , args, ctx, getUnmarkedLocation());
 		//PipeUtil.write(jdbc, massageForJdbc(dupes2.cache()) , args, ctx);
 	}
 
 	public Pipe getUnmarkedLocation() {
-		return PipeUtil.getTrainingDataUnmarkedPipe(args);
+		return PipeUtilBase.getTrainingDataUnmarkedPipe(args);
 	}
 
 	public Dataset<Row> getUncertain(Dataset<Row> dupes) {

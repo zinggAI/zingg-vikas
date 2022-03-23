@@ -4,7 +4,9 @@ import java.util.List;
 
 import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.functions;
 
+import scala.collection.JavaConverters;
 import zingg.client.util.ColName;
 
 import org.apache.spark.sql.Dataset;
@@ -34,11 +36,11 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
         return new SparkFrame(df.select(cols));
     }
 
-    /*
-    public ZFrame<Dataset<Row>, Row, Column> select(String... cols){
-        return new SparkFrame(df.select(cols));
+    
+    public ZFrame<Dataset<Row>, Row, Column> select(List<Column> cols){
+        return new SparkFrame(df.select(JavaConverters.asScalaIteratorConverter(cols.iterator()).asScala().toSeq()));
     }
-    */
+    
     
     public ZFrame<Dataset<Row>, Row, Column> select(String col) {
         return new SparkFrame(df.select(col));
@@ -75,4 +77,38 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
         return new SparkFrame(df.filter(col));
     }
 
+    public ZFrame<Dataset<Row>, Row, Column> withColumnRenamed(String s, String t) {
+        return new SparkFrame(df.withColumnRenamed(s, t));
+
+    }
+
+    public ZFrame<Dataset<Row>, Row, Column> dropDuplicates(String c, String d) {
+        return new SparkFrame(df.dropDuplicates(c, d));
+    }
+
+    public ZFrame<Dataset<Row>, Row, Column> drop(String c) {
+        return new SparkFrame(df.drop(c));
+    }
+
+
+    public ZFrame<Dataset<Row>, Row, Column> dropDuplicates(String[] c) {
+        return new SparkFrame(df.dropDuplicates(c));
+    }
+
+
+    public ZFrame<Dataset<Row>, Row, Column> union(ZFrame<Dataset<Row>, Row, Column> other) {
+        return new SparkFrame(df.union(other.df()));
+    }
+
+    public ZFrame<Dataset<Row>, Row, Column> unionByName(ZFrame<Dataset<Row>, Row, Column> other, boolean flag) {
+        return new SparkFrame(df.unionByName(other.df(), flag));
+    }
+
+    public ZFrame<Dataset<Row>, Row, Column> withColumn(String s, int c){
+        return new SparkFrame(df.withColumn(s, functions.lit(c)));
+    }
+
+    public ZFrame<Dataset<Row>, Row, Column> repartition(int nul){
+        return new SparkFrame(df.repartition(nul));
+    }
 }

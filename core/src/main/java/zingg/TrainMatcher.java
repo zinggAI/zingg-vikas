@@ -25,7 +25,7 @@ import zingg.util.BlockingTreeUtil;
 import zingg.util.DSUtil;
 import zingg.util.GraphUtil;
 import zingg.util.ModelUtil;
-import zingg.util.PipeUtil;
+import zingg.util.PipeUtilBase;
 
 public class TrainMatcher extends Matcher{
 

@@ -7,6 +7,7 @@ public interface ZFrame<T, R, C> {
     public ZFrame<T, R, C> cache();
     public String[] columns();
     public ZFrame<T, R, C> select(C... cols);
+    public ZFrame<T, R, C> select(List<C> cols);
     //public ZFrame<T, R, C> select(String... cols);
     public ZFrame<T, R, C> select(String col);
     public ZFrame <T, R, C> distinct();
@@ -26,5 +27,21 @@ public interface ZFrame<T, R, C> {
     public ZFrame<T,R,C> filter(C col);
 
     public T df();
+
+    public ZFrame<T,R,C> withColumnRenamed(String s, String t);
+
+    public ZFrame<T,R,C> dropDuplicates(String c, String d);
+
+    public ZFrame<T,R,C> dropDuplicates(String[] c);
+
+    public ZFrame<T,R,C> drop(String c);
+
+    public ZFrame<T,R,C> union(ZFrame<T,R,C> other);
+
+    public ZFrame<T,R,C> unionByName(ZFrame<T,R,C> other, boolean flag);
+
+    public ZFrame<T,R,C> withColumn(String s, int c);
+
+    public ZFrame<T,R,C> repartition(int num);
     
 }

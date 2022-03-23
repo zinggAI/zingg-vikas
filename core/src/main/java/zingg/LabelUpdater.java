@@ -17,7 +17,7 @@ import zingg.client.util.ColName;
 import zingg.client.util.ColValues;
 import zingg.util.DSUtil;
 import zingg.util.LabelMatchType;
-import zingg.util.PipeUtil;
+import zingg.util.PipeUtilBase;
 
 public class LabelUpdater extends Labeller {
 	protected static String name = "zingg.LabelUpdater";
@@ -30,7 +30,7 @@ public class LabelUpdater extends Labeller {
 	public void execute() throws ZinggClientException {
 		try {
 			LOG.info("Reading inputs for updateLabelling phase ...");
-			Dataset<Row> markedRecords = PipeUtil.read(spark, false, false, PipeUtil.getTrainingDataMarkedPipe(args));
+			Dataset<Row> markedRecords = PipeUtilBase.read(spark, false, false, PipeUtilBase.getTrainingDataMarkedPipe(args));
 			processRecordsCli(markedRecords);
 			LOG.info("Finished updataLabelling phase");
 		} catch (Exception e) {
@@ -111,7 +111,7 @@ public class LabelUpdater extends Labeller {
 
 
 	protected Pipe getOutputPipe() {
-		Pipe p = PipeUtil.getTrainingDataMarkedPipe(args);
+		Pipe p = PipeUtilBase.getTrainingDataMarkedPipe(args);
 		p.setMode(SaveMode.Overwrite);
 		return p;
 	}

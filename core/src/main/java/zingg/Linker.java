@@ -29,7 +29,7 @@ import zingg.util.BlockingTreeUtil;
 import zingg.util.DSUtil;
 import zingg.util.GraphUtil;
 import zingg.util.ModelUtil;
-import zingg.util.PipeUtil;
+import zingg.util.PipeUtilBase;
 
 import zingg.scala.TypeTags;
 import zingg.scala.DFUtil;
@@ -65,7 +65,7 @@ public class Linker extends Matcher {
 				dupesActual = Util.addUniqueCol(dupesActual, ColName.ID_COL);
 				Dataset<Row> dupes2 = DSUtil.alignLinked(dupesActual, args);
 				LOG.debug("uncertain output schema is " + dupes2.schema());
-				PipeUtil.write(dupes2, args, ctx, args.getOutput());
+				PipeUtilBase.write(dupes2, args, ctx, args.getOutput());
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

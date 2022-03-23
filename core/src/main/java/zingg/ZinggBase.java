@@ -30,7 +30,9 @@ import zingg.util.PipeUtilBase;
 
 //Spark Session
 //Dataset
-public abstract class ZinggBase<T,D> implements Serializable, IZingg {
+//row
+//column
+public abstract class ZinggBase<T,D, R, C> implements Serializable, IZingg {
 
     protected Arguments args;
 	
@@ -48,13 +50,11 @@ public abstract class ZinggBase<T,D> implements Serializable, IZingg {
     public abstract void init(Arguments args, String license)
         throws ZinggClientException;
 
-    public void setPipeUtil(PipeUtilBase<D,T> pipeUtil){
+    public abstract void setPipeUtil(PipeUtilBase<T,D,R,C> pipeUtil);
+    public abstract void setDSUtil(DSUtil<T,D,R,C> pipeUtil);
+    public abstract DSUtil<T,D,R,C> getDSUtil();
 
-    }
-
-    public PipeUtilBase<D,T> getPipeUtil() {
-        return null;
-    }
+    public abstract PipeUtilBase<T,D,R,C> getPipeUtil();
    
     protected void initHashFns() throws ZinggClientException {
 	}
@@ -81,7 +81,7 @@ public abstract class ZinggBase<T,D> implements Serializable, IZingg {
 		}
 	}
 
-    public void copyContext(ZinggBase<T,D> b) {
+    public void copyContext(ZinggBase<T,D, R, C> b) {
             this.args = b.args;
             this.featurers = b.featurers;
             this.hashFunctions = b.hashFunctions;
@@ -91,7 +91,7 @@ public abstract class ZinggBase<T,D> implements Serializable, IZingg {
         boolean collectMetrics = args.getCollectMetrics();
         Analytics.track(Metric.EXEC_TIME, (System.currentTimeMillis() - startTime) / 1000, collectMetrics);
 		Analytics.track(Metric.TOTAL_FIELDS_COUNT, args.getFieldDefinition().size(), collectMetrics);
-        Analytics.track(Metric.MATCH_FIELDS_COUNT, DSUtil.getFieldDefinitionFiltered(args, MatchType.DONT_USE).size(),
+        Analytics.track(Metric.MATCH_FIELDS_COUNT, getDSUtil().getFieldDefinitionFiltered(args, MatchType.DONT_USE).size(),
                 collectMetrics);
 		Analytics.track(Metric.DATA_FORMAT, getPipeUtil().getPipesAsString(args.getData()), collectMetrics);
 		Analytics.track(Metric.OUTPUT_FORMAT, getPipeUtil().getPipesAsString(args.getOutput()), collectMetrics);

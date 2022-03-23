@@ -18,7 +18,7 @@ import zingg.client.pipe.Pipe;
 import zingg.client.util.ColName;
 import zingg.client.util.ColValues;
 import zingg.util.DSUtil;
-import zingg.util.PipeUtil;
+import zingg.util.PipeUtilBase;
 import zingg.util.LabelMatchType;
 
 public class Labeller extends ZinggBase {
@@ -48,9 +48,9 @@ public class Labeller extends ZinggBase {
 		Dataset<Row> unmarkedRecords = null;
 		Dataset<Row> markedRecords = null;
 		try {
-			unmarkedRecords = PipeUtil.read(spark, false, false, PipeUtil.getTrainingDataUnmarkedPipe(args));
+			unmarkedRecords = PipeUtilBase.read(spark, false, false, PipeUtilBase.getTrainingDataUnmarkedPipe(args));
 			try {
-				markedRecords = PipeUtil.read(spark, false, false, PipeUtil.getTrainingDataMarkedPipe(args));
+				markedRecords = PipeUtilBase.read(spark, false, false, PipeUtilBase.getTrainingDataMarkedPipe(args));
 			} catch (Exception e) {
 				LOG.warn("No record has been marked yet");
 			}
@@ -208,11 +208,11 @@ public class Labeller extends ZinggBase {
 			LOG.warn("No records to be labelled.");
 			return;
 		}		
-		PipeUtil.write(records, args, ctx, getOutputPipe());
+		PipeUtilBase.write(records, args, ctx, getOutputPipe());
 	}
 
 	protected Pipe getOutputPipe() {
-		return PipeUtil.getTrainingDataMarkedPipe(args);
+		return PipeUtilBase.getTrainingDataMarkedPipe(args);
 	}
 }
 

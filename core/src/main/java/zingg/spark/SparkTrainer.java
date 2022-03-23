@@ -22,7 +22,7 @@ import zingg.util.Metric;
 import zingg.util.BlockingTreeUtil;
 import zingg.util.DSUtil;
 import zingg.util.ModelUtil;
-import zingg.util.PipeUtil;
+import zingg.util.PipeUtilBase;
 
 import org.apache.spark.sql.SparkSession;
 
@@ -50,7 +50,7 @@ public class SparkTrainer extends Trainer<SparkSession>{
 			LOG.warn("Training on positive pairs - " + positives.count());
 			LOG.warn("Training on negative pairs - " + negatives.count());
 				
-			Dataset<Row> testData = PipeUtil.read(spark, true, args.getNumPartitions(), false, args.getData());
+			Dataset<Row> testData = PipeUtilBase.read(spark, true, args.getNumPartitions(), false, args.getData());
 			Tree<Canopy> blockingTree = BlockingTreeUtil.createBlockingTreeFromSample(testData,  positives, 0.5,
 					-1, args, hashFunctions);
 			if (blockingTree == null || blockingTree.getSubTrees() == null) {
