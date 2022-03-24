@@ -1,4 +1,4 @@
-package zingg.util;
+package zingg.spark.util;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,22 +23,21 @@ import zingg.block.Tree;
 import zingg.client.Arguments;
 import zingg.client.FieldDefinition;
 import zingg.client.MatchType;
-import zingg.client.ZFrame;
 import zingg.client.util.ListMap;
 import zingg.client.util.Util;
 import zingg.hash.HashFunction;
 
-public class BlockingTreeUtil<S,D,R,C> {
+public class BlockingTreeUtil {
 
-    public final Log LOG = LogFactory.getLog(BlockingTreeUtil.class);
+    public static final Log LOG = LogFactory.getLog(BlockingTreeUtil.class);
 	
 
-    public Tree<Canopy> createBlockingTree(ZFrame<D,R,C> testData,  
-			ZFrame<D,R,C> positives, double sampleFraction, long blockSize,
+    public static Tree<Canopy> createBlockingTree(Dataset<Row> testData,  
+			Dataset<Row> positives, double sampleFraction, long blockSize,
             Arguments args,
             ListMap<DataType, HashFunction> hashFunctions) throws Exception {
-		ZFrame<D,R,C> sample = testData.sample(false, sampleFraction);
-		sample = sample.cache();
+		Dataset<Row> sample = testData.sample(false, sampleFraction);
+		sample = sample.persist(StorageLevel.MEMORY_ONLY());
 		long totalCount = sample.count();
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("Learning blocking rules for sample count " + totalCount  
@@ -48,7 +47,7 @@ public class BlockingTreeUtil<S,D,R,C> {
 		LOG.info("Learning indexing rules for block size " + blockSize);
        
 		positives = positives.coalesce(1); 
-		Block<S,D,R,C> cblock = new Block(sample, positives, hashFunctions, blockSize);
+		Block cblock = new Block(sample, positives, hashFunctions, blockSize);
 		Canopy root = new Canopy(sample.collectAsList(), positives.collectAsList());
 
 		List<FieldDefinition> fd = new ArrayList<FieldDefinition> ();
@@ -70,25 +69,25 @@ public class BlockingTreeUtil<S,D,R,C> {
 	}
 
 	
-	public  Tree<Canopy> createBlockingTreeFromSample(ZFrame<D,R,C> testData,  
-			ZFrame<D,R,C> positives, double sampleFraction, long blockSize, Arguments args, 
+	public static Tree<Canopy> createBlockingTreeFromSample(Dataset<Row> testData,  
+			Dataset<Row> positives, double sampleFraction, long blockSize, Arguments args, 
             ListMap<DataType, HashFunction> hashFunctions) throws Exception {
-		ZFrame<D,R,C> sample = testData.sample(false, sampleFraction); 
+		Dataset<Row> sample = testData.sample(false, sampleFraction); 
 		return createBlockingTree(sample, positives, sampleFraction, blockSize, args, hashFunctions);
 	}
 	
-	public  void writeBlockingTree(SparkSession spark, JavaSparkContext ctx, Tree<Canopy> blockingTree, Arguments args) throws Exception {
+	public static void writeBlockingTree(SparkSession spark, JavaSparkContext ctx, Tree<Canopy> blockingTree, Arguments args) throws Exception {
 		byte[] byteArray  = Util.convertObjectIntoByteArray(blockingTree);
 		StructType schema = DataTypes.createStructType(new StructField[] { DataTypes.createStructField("BlockingTree", DataTypes.BinaryType, false) });
 		List<Object> objList = new ArrayList<>();
 		objList.add(byteArray);
 		JavaRDD<Row> rowRDD = ctx.parallelize(objList).map((Object row) -> RowFactory.create(row));
-		ZFrame<D,R,C> df = spark.sqlContext().createDataFrame(rowRDD, schema).toDF().coalesce(1);
+		Dataset<Row> df = spark.sqlContext().createDataFrame(rowRDD, schema).toDF().coalesce(1);
 		PipeUtilBase.write(df, args, ctx, PipeUtilBase.getBlockingTreePipe(args));
 	}
 
-	public  Tree<Canopy> readBlockingTree(SparkSession spark, Arguments args) throws Exception {
-		ZFrame<D,R,C> tree = PipeUtilBase.read(spark, false, args.getNumPartitions(), false, PipeUtilBase.getBlockingTreePipe(args));
+	public static Tree<Canopy> readBlockingTree(SparkSession spark, Arguments args) throws Exception {
+		Dataset<Row> tree = PipeUtilBase.read(spark, false, args.getNumPartitions(), false, PipeUtilBase.getBlockingTreePipe(args));
 		byte [] byteArrayBack = (byte[]) tree.head().get(0);
 		Tree<Canopy> blockingTree = null;
 		blockingTree =  (Tree<Canopy>) Util.revertObjectFromByteArray(byteArrayBack);

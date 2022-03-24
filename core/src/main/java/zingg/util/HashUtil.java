@@ -17,7 +17,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.spark.sql.api.java.UDF1;
 
 
-public class HashUtil {
+public interface HashUtil<D,R,C,T,T1> {
     /**
 	 * Use only those functions which are defined in the conf
 	 * All functions exist in the registry
@@ -26,20 +26,6 @@ public class HashUtil {
 	 * @return
 	 * @throws Exception
 	 */
-	public static ListMap<DataType, HashFunction> getHashFunctionList(String fileName, SparkSession spark)
-			throws Exception {
-		ListMap<DataType, HashFunction> functions = new ListMap<DataType, HashFunction>();
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
-		List<HashFnFromConf> scriptArgs = mapper.readValue(
-				zingg.ZinggBase.class.getResourceAsStream("/" + fileName),
-				new TypeReference<List<HashFnFromConf>>() {
-				});
-		for (HashFnFromConf scriptArg : scriptArgs) {
-			HashFunction fn = HashFunctionRegistry.getFunction(scriptArg.getName());
-			spark.udf().register(fn.getName(), (UDF1) fn, fn.getReturnType());
-			functions.add(fn.getDataType(), fn);
-		}
-		return functions;
-	}
+	public ListMap<T1, HashFunction<D,R,C,T,T1>> getHashFunctionList(String fileName, Object spark)
+			throws Exception ;
 }

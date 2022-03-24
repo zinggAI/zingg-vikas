@@ -8,6 +8,7 @@ import org.apache.spark.sql.Row;
 import zingg.block.Canopy;
 import zingg.block.Tree;
 import zingg.model.Model;
+import zingg.spark.util.BlockingTreeUtil;
 import zingg.client.ZFrame;
 import zingg.client.ZinggClientException;
 import zingg.client.ZinggOptions;
@@ -15,8 +16,6 @@ import zingg.util.Analytics;
 import zingg.client.util.ColName;
 import zingg.client.util.ColValues;
 import zingg.util.Metric;
-
-import zingg.util.BlockingTreeUtil;
 import zingg.util.DSUtil;
 import zingg.util.ModelUtil;
 import zingg.util.PipeUtilBase;
@@ -38,11 +37,11 @@ public abstract class Trainer<S,D,R,C> extends ZinggBase<S,D,R,C>{
 			tra = getDSUtil().joinWithItself(tra, ColName.CLUSTER_COLUMN, true);
 			tra = tra.cache();
 			positives = tra.filter(tra.equalTo(ColName.MATCH_FLAG_COL, ColValues.MATCH_TYPE_MATCH));
-			negatives = tra.filter(tra.col(ColName.MATCH_FLAG_COL).equalTo(ColValues.MATCH_TYPE_NOT_A_MATCH));
+			negatives = tra.filter(tra.equalTo(ColName.MATCH_FLAG_COL, ColValues.MATCH_TYPE_NOT_A_MATCH));
 			LOG.warn("Training on positive pairs - " + positives.count());
 			LOG.warn("Training on negative pairs - " + negatives.count());
 				
-			D testData = getPipeUtil().read(true, args.getNumPartitions(), false, args.getData());
+			ZFrame<D,R,C> testData = getPipeUtil().read(true, args.getNumPartitions(), false, args.getData());
 			Tree<Canopy> blockingTree = BlockingTreeUtil.createBlockingTreeFromSample(testData,  positives, 0.5,
 					-1, args, hashFunctions);
 			if (blockingTree == null || blockingTree.getSubTrees() == null) {

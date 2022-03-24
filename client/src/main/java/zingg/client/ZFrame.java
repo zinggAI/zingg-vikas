@@ -42,12 +42,23 @@ public interface ZFrame<T, R, C> {
 
     public ZFrame<T,R,C> withColumn(String s, int c);
 
+    public ZFrame<T,R,C> withColumn(String s, C c);
     public ZFrame<T,R,C> repartition(int num);
+
+    public ZFrame<T,R,C> sample(boolean repartition, float num);
+
+    public ZFrame<T,R,C> coalesce(int num);
 
     public C gt(String c);
 
 	public C equalTo(String c, String e);
 
 	public C notEqual(String c, String e);
+    
+    public C equalTo(String c, int e);
+
+	public C notEqual(String c, int e);
+
+
     
 }

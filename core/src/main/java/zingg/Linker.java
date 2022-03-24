@@ -25,13 +25,13 @@ import zingg.client.ZinggOptions;
 import zingg.client.util.ColName;
 import zingg.client.util.ColValues;
 import zingg.client.util.Util;
-import zingg.util.BlockingTreeUtil;
 import zingg.util.DSUtil;
 import zingg.util.GraphUtil;
 import zingg.util.ModelUtil;
 import zingg.util.PipeUtilBase;
 
 import zingg.scala.TypeTags;
+import zingg.spark.util.BlockingTreeUtil;
 import zingg.scala.DFUtil;
 
 public class Linker extends Matcher {

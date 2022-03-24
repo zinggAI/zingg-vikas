@@ -108,6 +108,10 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
         return new SparkFrame(df.withColumn(s, functions.lit(c)));
     }
 
+    public ZFrame<Dataset<Row>, Row, Column> withColumn(String s, Column c){
+        return new SparkFrame(df.withColumn(s, c));
+    }
+
     public ZFrame<Dataset<Row>, Row, Column> repartition(int nul){
         return new SparkFrame(df.repartition(nul));
     }
@@ -123,5 +127,22 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
 	public Column notEqual(String c, String e) {
 		return df.col(c).notEqual(e);
 	}
+
+    public Column equalTo(String c, int e){
+		return df.col(c).equalTo(e);
+	}
+
+	public Column notEqual(String c, int e) {
+		return df.col(c).notEqual(e);
+	}
+
+    public ZFrame<Dataset<Row>, Row, Column> sample(boolean withReplacement, float num){
+        return new SparkFrame(df.sample(withReplacement, num));
+    }
+
+    public ZFrame<Dataset<Row>, Row, Column> coalesce(int num){
+        return new SparkFrame(df.coalesce(num));
+    }
+
 
 }

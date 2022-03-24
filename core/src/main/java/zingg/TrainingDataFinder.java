@@ -25,13 +25,13 @@ import zingg.client.util.ColValues;
 import zingg.client.util.Util;
 import zingg.model.LabelModel;
 import zingg.model.Model;
-import zingg.util.BlockingTreeUtil;
 import zingg.util.DSUtil;
 import zingg.util.ModelUtil;
 import zingg.util.PipeUtilBase;
 
 
 import zingg.scala.TypeTags;
+import zingg.spark.util.BlockingTreeUtil;
 import zingg.scala.DFUtil;
 
 public class TrainingDataFinder extends ZinggBase{
