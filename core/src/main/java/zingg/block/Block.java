@@ -26,7 +26,7 @@ import zingg.client.util.ColName;
 import scala.collection.JavaConversions;
 import scala.collection.Seq;
 
-public class Block<D,R,C> implements Serializable {
+public class Block<D,R,C,T,T1> implements Serializable {
 
 	public static final Log LOG = LogFactory.getLog(Block.class);
 
@@ -344,7 +344,7 @@ public class Block<D,R,C> implements Serializable {
 		return result;
 	}*/
 	
-	public StringBuilder applyTree(R tuple, Tree<Canopy<R>> tree,
+	public static <R> StringBuilder applyTree(R tuple, Tree<Canopy<R>> tree,
 			Canopy<R>root, StringBuilder result) {
 		if (root.function != null) {
 			Object hash = root.function.apply(tuple, root.context.fieldName);
@@ -401,7 +401,7 @@ public class Block<D,R,C> implements Serializable {
 		@Override
 		public R call(R r) {
 			StringBuilder bf = new StringBuilder();
-			bf = tree.applyTree(r, tree, tree.getHead(), bf);
+			bf = Block.applyTree(r, tree, tree.getHead(), bf);
 			Seq<Object> s = null; //TODOr.toSeq();
 			List<Object> seqList = JavaConversions.seqAsJavaList(s);
 			List<Object> returnList = new ArrayList<Object>(seqList.size()+1);

@@ -5,17 +5,6 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
-import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
-import org.apache.spark.storage.StorageLevel;
 
 import zingg.block.Block;
 import zingg.block.Canopy;
@@ -26,17 +15,16 @@ import zingg.client.MatchType;
 import zingg.client.ZFrame;
 import zingg.client.util.ListMap;
 import zingg.client.util.Util;
-import zingg.hash.HashFunction;
 
-public class BlockingTreeUtil<S,D,R,C> {
+public class BlockingTreeUtil<D,R,C,T,T1> {
 
     public final Log LOG = LogFactory.getLog(BlockingTreeUtil.class);
 	
 
-    public Tree<Canopy> createBlockingTree(ZFrame<D,R,C> testData,  
+    public Tree<Canopy<R>> createBlockingTree(ZFrame<D,R,C> testData,  
 			ZFrame<D,R,C> positives, double sampleFraction, long blockSize,
             Arguments args,
-            ListMap<DataType, HashFunction> hashFunctions) throws Exception {
+            ListMap hashFunctions) throws Exception {
 		ZFrame<D,R,C> sample = testData.sample(false, sampleFraction);
 		sample = sample.cache();
 		long totalCount = sample.count();
@@ -48,8 +36,8 @@ public class BlockingTreeUtil<S,D,R,C> {
 		LOG.info("Learning indexing rules for block size " + blockSize);
        
 		positives = positives.coalesce(1); 
-		Block<S,D,R,C> cblock = new Block(sample, positives, hashFunctions, blockSize);
-		Canopy root = new Canopy(sample.collectAsList(), positives.collectAsList());
+		Block<D,R,C,T,T1> cblock = new Block<D,R,C,T,T1>(sample, positives, hashFunctions, blockSize);
+		Canopy<R> root = new Canopy<R>(sample.collectAsList(), positives.collectAsList());
 
 		List<FieldDefinition> fd = new ArrayList<FieldDefinition> ();
 
@@ -59,7 +47,7 @@ public class BlockingTreeUtil<S,D,R,C> {
 			}
 		}
 
-		Tree<Canopy> blockingTree = cblock.getBlockingTree(null, null, root,
+		Tree<Canopy<R>> blockingTree = cblock.getBlockingTree(null, null, root,
 				fd);
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("The blocking tree is ");
@@ -70,28 +58,18 @@ public class BlockingTreeUtil<S,D,R,C> {
 	}
 
 	
-	public  Tree<Canopy> createBlockingTreeFromSample(ZFrame<D,R,C> testData,  
+	public  Tree<Canopy<R>> createBlockingTreeFromSample(ZFrame<D,R,C> testData,  
 			ZFrame<D,R,C> positives, double sampleFraction, long blockSize, Arguments args, 
-            ListMap<DataType, HashFunction> hashFunctions) throws Exception {
+            ListMap hashFunctions) throws Exception {
 		ZFrame<D,R,C> sample = testData.sample(false, sampleFraction); 
 		return createBlockingTree(sample, positives, sampleFraction, blockSize, args, hashFunctions);
 	}
 	
-	public  void writeBlockingTree(SparkSession spark, JavaSparkContext ctx, Tree<Canopy> blockingTree, Arguments args) throws Exception {
-		byte[] byteArray  = Util.convertObjectIntoByteArray(blockingTree);
-		StructType schema = DataTypes.createStructType(new StructField[] { DataTypes.createStructField("BlockingTree", DataTypes.BinaryType, false) });
-		List<Object> objList = new ArrayList<>();
-		objList.add(byteArray);
-		JavaRDD<Row> rowRDD = ctx.parallelize(objList).map((Object row) -> RowFactory.create(row));
-		ZFrame<D,R,C> df = spark.sqlContext().createDataFrame(rowRDD, schema).toDF().coalesce(1);
-		PipeUtilBase.write(df, args, ctx, PipeUtilBase.getBlockingTreePipe(args));
+	public  void writeBlockingTree(Tree<Canopy<R>> blockingTree, Arguments args) throws Exception {
+		Util.writeToFile(blockingTree, args.getBlockFile());
 	}
 
-	public  Tree<Canopy> readBlockingTree(SparkSession spark, Arguments args) throws Exception {
-		ZFrame<D,R,C> tree = PipeUtilBase.read(spark, false, args.getNumPartitions(), false, PipeUtilBase.getBlockingTreePipe(args));
-		byte [] byteArrayBack = (byte[]) tree.head().get(0);
-		Tree<Canopy> blockingTree = null;
-		blockingTree =  (Tree<Canopy>) Util.revertObjectFromByteArray(byteArrayBack);
-		return blockingTree;
+	public  Tree<Canopy<R>> readBlockingTree(Arguments args) throws Exception {
+		return (Tree<Canopy<R>>) Util.readfromFile(args.getBlockFile());;
 	}
 }

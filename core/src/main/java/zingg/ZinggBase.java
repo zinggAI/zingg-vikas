@@ -3,13 +3,9 @@ package zingg;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.types.DataType;
 
 import zingg.client.Arguments;
 import zingg.client.FieldDefinition;
@@ -18,6 +14,7 @@ import zingg.client.MatchType;
 import zingg.client.ZinggClientException;
 import zingg.client.ZinggOptions;
 import zingg.util.Analytics;
+import zingg.util.BlockingTreeUtil;
 import zingg.util.DSUtil;
 import zingg.client.util.ListMap;
 import zingg.util.Metric;
@@ -39,7 +36,7 @@ public abstract class ZinggBase<T,D, R, C> implements Serializable, IZingg {
     protected T context;
     protected static String name;
     protected ZinggOptions zinggOptions;
-    protected ListMap<DataType, HashFunction> hashFunctions;
+    protected ListMap hashFunctions;
 	protected Map<FieldDefinition, Feature> featurers;
     protected long startTime;
 	public static final String hashFunctionFile = "hashFunctions.json";
@@ -107,11 +104,11 @@ public abstract class ZinggBase<T,D, R, C> implements Serializable, IZingg {
         this.args = args;
     }
 
-    public ListMap<DataType,HashFunction> getHashFunctions() {
+    public ListMap getHashFunctions() {
         return this.hashFunctions;
     }
 
-    public void setHashFunctions(ListMap<DataType,HashFunction> hashFunctions) {
+    public void setHashFunctions(ListMap hashFunctions) {
         this.hashFunctions = hashFunctions;
     }
 
@@ -146,6 +143,8 @@ public abstract class ZinggBase<T,D, R, C> implements Serializable, IZingg {
         return zinggOptions;
     }
 
+    public abstract HashUtil getHashUtil();
+    public abstract BlockingTreeUtil getBlockingTreeUtil();
 
 
   

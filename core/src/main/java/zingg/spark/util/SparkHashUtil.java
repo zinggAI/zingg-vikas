@@ -12,13 +12,10 @@ import org.apache.spark.sql.SparkSession;
 import zingg.client.util.ListMap;
 import zingg.hash.HashFnFromConf;
 import zingg.hash.HashFunction;
-import zingg.hash.HashFunctionRegistry;
 import zingg.spark.hash.SparkHashFunctionRegistry;
 import zingg.util.HashUtil;
 
 import java.util.List;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.spark.sql.api.java.UDF1;
 
 

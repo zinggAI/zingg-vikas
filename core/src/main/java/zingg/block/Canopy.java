@@ -143,7 +143,7 @@ public class Canopy<R> implements Serializable {
 		this.training = training;
 	}
 
-	public List<Canopy> getCanopies() {
+	public List<Canopy<R>> getCanopies() {
 		//long ts = System.currentTimeMillis();
 		/*
 		List<R> newTraining = function.apply(training, context.fieldName, ColName.HASH_COL).cache();
@@ -166,14 +166,14 @@ public class Canopy<R> implements Serializable {
 		}
 		LOG.debug("getCanopies2" + (System.currentTimeMillis() - ts));
 		return returnCanopies;*/
-		ListMap<Object, Row> hashes = new ListMap<Object, Row>();
-		List<Canopy> returnCanopies = new ArrayList<Canopy>();
+		ListMap<Object, R> hashes = new ListMap<Object, R>();
+		List<Canopy<R>> returnCanopies = new ArrayList<Canopy<R>>();
 		
-		for (Row r : training) {
+		for (R r : training) {
 			hashes.add(function.apply(r, context.fieldName), r);
 		}
 		for (Object o: hashes.keySet()) {
-			Canopy can = new Canopy(hashes.get(o), dupeRemaining);
+			Canopy<R> can = new Canopy<R>(hashes.get(o), dupeRemaining);
 			can.hash = o;
 			returnCanopies.add(can);
 		}

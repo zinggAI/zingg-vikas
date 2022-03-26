@@ -28,6 +28,11 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
         return new SparkFrame(df.cache());
     }
 
+    public ZFrame<Dataset<Row>, Row, Column> as(String s) {
+        return new SparkFrame(df.as(s));
+    }
+
+
     public String[] columns() {
         return df.columns();
     }
@@ -46,6 +51,14 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
         return new SparkFrame(df.select(col));
     }
 
+    public ZFrame<Dataset<Row>, Row, Column> selectExpr(String... col) {
+        return new SparkFrame(df.selectExpr(col));
+    }
+
+    public ZFrame<Dataset<Row>, Row, Column> select(String col, String col1) {
+        return new SparkFrame(df.select(col, col1));
+    }
+
     public ZFrame<Dataset<Row>, Row, Column> distinct() {
         return new SparkFrame(df.distinct());
     }
@@ -55,6 +68,10 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
 
     public ZFrame<Dataset<Row>, Row, Column> toDF(String[] cols) {
         return new SparkFrame(df.toDF(cols));
+    }
+
+    public ZFrame<Dataset<Row>, Row, Column> toDF(String col1, String col2) {
+        return new SparkFrame(df.toDF(col1, col2));
     }
     
     public ZFrame<Dataset<Row>, Row, Column> join(ZFrame<Dataset<Row>, Row, Column> lines1, String joinColumn) {
@@ -90,6 +107,18 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
         return new SparkFrame(df.drop(c));
     }
 
+    public ZFrame<Dataset<Row>, Row, Column> except(ZFrame<Dataset<Row>, Row, Column> c) {
+        return new SparkFrame(df.except(c.df()));
+    }
+
+    
+
+    public ZFrame<Dataset<Row>, Row, Column> groupByMinMax(Column c) {
+        return new SparkFrame(df.groupBy(df.col(ColName.COL_PREFIX + ColName.ID_COL)).agg(
+			functions.min(ColName.SCORE_COL).as(ColName.SCORE_MIN_COL),
+			functions.max(ColName.SCORE_COL).as(ColName.SCORE_MAX_COL)));
+    }
+
 
     public ZFrame<Dataset<Row>, Row, Column> dropDuplicates(String[] c) {
         return new SparkFrame(df.dropDuplicates(c));
@@ -107,6 +136,9 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
     public ZFrame<Dataset<Row>, Row, Column> withColumn(String s, int c){
         return new SparkFrame(df.withColumn(s, functions.lit(c)));
     }
+    public ZFrame<Dataset<Row>, Row, Column> withColumn(String s, double c){
+        return new SparkFrame(df.withColumn(s, functions.lit(c)));
+    }
 
     public ZFrame<Dataset<Row>, Row, Column> withColumn(String s, Column c){
         return new SparkFrame(df.withColumn(s, c));
@@ -114,6 +146,10 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
 
     public ZFrame<Dataset<Row>, Row, Column> repartition(int nul){
         return new SparkFrame(df.repartition(nul));
+    }
+
+    public ZFrame<Dataset<Row>, Row, Column> repartition(int nul, Column c){
+        return new SparkFrame(df.repartition(nul, c));
     }
 
     public Column gt(String c) {
@@ -132,6 +168,10 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
 		return df.col(c).equalTo(e);
 	}
 
+    public Column equalTo(String c, double e){
+		return df.col(c).equalTo(e);
+	}
+
 	public Column notEqual(String c, int e) {
 		return df.col(c).notEqual(e);
 	}
@@ -140,9 +180,19 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
         return new SparkFrame(df.sample(withReplacement, num));
     }
 
+    public ZFrame<Dataset<Row>, Row, Column> sample(boolean withReplacement, double num){
+        return new SparkFrame(df.sample(withReplacement, num));
+    }
+
     public ZFrame<Dataset<Row>, Row, Column> coalesce(int num){
         return new SparkFrame(df.coalesce(num));
     }
 
+    public void show(int num) {
+        df.show(num);
+    }
 
+    public void show() {
+        df.show();
+    }
 }
