@@ -13,12 +13,23 @@ import zingg.client.Arguments;
 import zingg.client.IZingg;
 import zingg.client.ZinggClientException;
 import zingg.spark.util.SparkHashUtil;
+import zingg.spark.util.SparkPipeUtil;
+import zingg.util.BlockingTreeUtil;
+import zingg.util.DSUtil;
+import zingg.util.GraphUtil;
 import zingg.util.HashUtil;
+import zingg.util.PipeUtilBase;
+import zingg.spark.util.SparkDSUtil;
 
-public abstract class SparkBase extends ZinggBase<SparkSession, Dataset<Row>, Row, Column>{
+public class SparkBase extends ZinggBase<SparkSession, Dataset<Row>, Row, Column>{
 
     JavaSparkContext ctx;
     public static final Log LOG = LogFactory.getLog(SparkBase.class);
+    PipeUtilBase pipeUtil;
+    HashUtil hashUtil;
+    DSUtil dsUtil;
+    GraphUtil graphUtil;
+    BlockingTreeUtil blockingTreeUtil;
 
     @Override
     public void init(Arguments args, String license)
@@ -36,6 +47,11 @@ public abstract class SparkBase extends ZinggBase<SparkSession, Dataset<Row>, Ro
             initHashFns();
             loadFeatures();
             ctx.setCheckpointDir("/tmp/checkpoint");	
+            setPipeUtil(new SparkPipeUtil(context));
+            setDSUtil(new SparkDSUtil());
+            setHashUtil(new SparkHashUtil());
+            setGraphUtil(new GraphUtil());
+            
         }
         catch(Throwable e) {
             if (LOG.isDebugEnabled()) e.printStackTrace();
@@ -66,7 +82,52 @@ public abstract class SparkBase extends ZinggBase<SparkSession, Dataset<Row>, Ro
     }
 
     public HashUtil getHashUtil() {
-        return new SparkHashUtil();
+        return hashUtil;
+    }
+
+    public void setHashUtil(HashUtil t) {
+        hashUtil = t;
+    }
+
+    public GraphUtil getGraphUtil() {
+        return graphUtil;
+    }
+
+    public void setGraphUtil(GraphUtil t) {
+        graphUtil = t;
+    }
+
+    @Override
+    public void execute() throws ZinggClientException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void setPipeUtil(PipeUtilBase<SparkSession, Dataset<Row>, Row, Column> pipeUtil) {
+        this.pipeUtil = pipeUtil;
+        
+    }
+
+    @Override
+    public void setDSUtil(DSUtil<SparkSession, Dataset<Row>, Row, Column> pipeUtil) {
+       this.dsUtil = pipeUtil;
+        
+    }
+
+    @Override
+    public DSUtil<SparkSession, Dataset<Row>, Row, Column> getDSUtil() {
+        return dsUtil;
+    }
+
+    @Override
+    public PipeUtilBase<SparkSession, Dataset<Row>, Row, Column> getPipeUtil() {
+        return this.pipeUtil;
+    }
+
+    @Override
+    public BlockingTreeUtil getBlockingTreeUtil() {
+        return this.blockingTreeUtil;
     }
 
 

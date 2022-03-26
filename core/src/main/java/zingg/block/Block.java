@@ -391,38 +391,6 @@ public class Block<D,R,C,T,T1> implements Serializable {
 		}			
 	}
 	
-	public abstract class BlockFunction<R> implements MapFunction<R,R> {
-		
-		Tree<Canopy<R>> tree;
-		public BlockFunction(Tree<Canopy<R>> tree) {
-			this.tree = tree;
-		}
-		
-		@Override
-		public R call(R r) {
-			StringBuilder bf = new StringBuilder();
-			bf = Block.applyTree(r, tree, tree.getHead(), bf);
-			Seq<Object> s = null; //TODOr.toSeq();
-			List<Object> seqList = JavaConversions.seqAsJavaList(s);
-			List<Object> returnList = new ArrayList<Object>(seqList.size()+1);
-			returnList.addAll(seqList);
-			returnList.add(bf.toString().hashCode());
-			if (LOG.isDebugEnabled()) {
-				for (Object o: returnList) {
-					LOG.debug("return row col is " + o );
-				}
-			LOG.debug("returning row " + RowFactory.create(returnList) );
-			}
-			
-			return createRow(returnList); //RowFactory.create(returnList);			
-		}
-
-		public abstract Seq<Object> toSeq(R r) ;
-
-		public abstract R createRow(List<Object> o);
-
-
-	}
-
+	
 }
 

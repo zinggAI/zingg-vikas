@@ -45,14 +45,16 @@ public abstract class Matcher<S,D,R,C> extends ZinggBase<S,D,R,C>{
 		return getPipeUtil().read(true, args.getNumPartitions(), true, args.getData());
 	}
 
-	protected ZFrame<D,R,C>getBlocked(ZFrame<D,R,C>testData) throws Exception{
+	protected ZFrame<D,R,C> getBlocked(ZFrame<D,R,C> testData) throws Exception{
 		LOG.debug("Blocking model file location is " + args.getBlockFile());
-		Tree<Canopy> tree = getBlockingTreeUtil().readBlockingTree(args);
-		ZFrame<D,R,C>blocked = testData.map(new Block.BlockFunction<R>(tree), RowEncoder.apply(Block.appendHashCol(testData.schema())));
-		ZFrame<D,R,C>blocked1 = blocked.repartition(args.getNumPartitions(), blocked.col(ColName.HASH_COL)); //.cache();
+		Tree<Canopy<R>> tree = getBlockingTreeUtil().readBlockingTree(args);
+		ZFrame<D,R,C> blocked = getBlockHashes(testData, tree);		
+		ZFrame<D,R,C> blocked1 = blocked.repartition(args.getNumPartitions(), blocked.col(ColName.HASH_COL)); //.cache();
 		return blocked1;
 	}
 
+	protected abstract ZFrame<D,R,C> getBlockHashes(ZFrame<D,R,C> testData, Tree<Canopy<R>> tree);
+	
 	protected ZFrame<D,R,C> getBlocks(ZFrame<D,R,C>blocked) throws Exception{
 		return getDSUtil().joinWithItself(blocked, ColName.HASH_COL, true).cache();
 	}
@@ -86,7 +88,7 @@ public abstract class Matcher<S,D,R,C> extends ZinggBase<S,D,R,C>{
 
 	protected Model getModel() {
 		Model model = new Model(this.featurers);
-		model.register(spark);
+		model.register(getContext());
 		model.load(args.getModel());
 		return model;
 	}
