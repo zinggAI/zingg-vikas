@@ -16,6 +16,7 @@ import zingg.client.ZinggOptions;
 import zingg.util.Analytics;
 import zingg.util.BlockingTreeUtil;
 import zingg.util.DSUtil;
+import zingg.util.GraphUtil;
 import zingg.client.util.ListMap;
 import zingg.util.Metric;
 import zingg.feature.Feature;
@@ -29,11 +30,11 @@ import zingg.util.PipeUtilBase;
 //Dataset
 //row
 //column
-public abstract class ZinggBase<T,D, R, C> implements Serializable, IZingg {
+public abstract class ZinggBase<S,D, R, C, T1,T2> implements Serializable, IZingg {
 
     protected Arguments args;
 	
-    protected T context;
+    protected S context;
     protected static String name;
     protected ZinggOptions zinggOptions;
     protected ListMap hashFunctions;
@@ -42,18 +43,30 @@ public abstract class ZinggBase<T,D, R, C> implements Serializable, IZingg {
 	public static final String hashFunctionFile = "hashFunctions.json";
 
     public static final Log LOG = LogFactory.getLog(ZinggBase.class);
+    protected PipeUtilBase<S,D,R,C> pipeUtil;
+    protected HashUtil<D,R,C,T1,T2> hashUtil;
+    protected DSUtil<S,D,R,C> dsUtil;
+    protected GraphUtil<D,R,C> graphUtil;
+    protected BlockingTreeUtil<D,R,C,T1,T2> blockingTreeUtil;
+    ZinggBase base;
+
+    public ZinggBase() {
+
+    }
+
+    public void setBase(ZinggBase<S,D,R,C,T1,T2> base) {
+        this.base = base;
+    }
 
     
-    public abstract void init(Arguments args, String license)
-        throws ZinggClientException;
+    public void init(Arguments args, String license)
+        throws ZinggClientException {
+            base.init(args, license);
+        }
 
-    public abstract void setPipeUtil(PipeUtilBase<T,D,R,C> pipeUtil);
-    public abstract void setDSUtil(DSUtil<T,D,R,C> pipeUtil);
-    public abstract DSUtil<T,D,R,C> getDSUtil();
-
-    public abstract PipeUtilBase<T,D,R,C> getPipeUtil();
-   
+    
     protected void initHashFns() throws ZinggClientException {
+        base.initHashFns();
 	}
 
     public void loadFeatures() throws ZinggClientException {
@@ -78,12 +91,7 @@ public abstract class ZinggBase<T,D, R, C> implements Serializable, IZingg {
 		}
 	}
 
-    public void copyContext(ZinggBase<T,D, R, C> b) {
-            this.args = b.args;
-            this.featurers = b.featurers;
-            this.hashFunctions = b.hashFunctions;
-    }
-
+    
 	public void postMetrics() {
         boolean collectMetrics = args.getCollectMetrics();
         Analytics.track(Metric.EXEC_TIME, (System.currentTimeMillis() - startTime) / 1000, collectMetrics);
@@ -121,11 +129,11 @@ public abstract class ZinggBase<T,D, R, C> implements Serializable, IZingg {
     }
 
     
-    public T getContext() {
+    public S getContext() {
         return this.context;
     }
 
-    public void setContext(T spark) {
+    public void setContext(S spark) {
         this.context = spark;
     }
     public void setName(String name) {
@@ -143,8 +151,49 @@ public abstract class ZinggBase<T,D, R, C> implements Serializable, IZingg {
         return zinggOptions;
     }
 
-    public abstract HashUtil getHashUtil();
-    public abstract BlockingTreeUtil getBlockingTreeUtil();
+    public HashUtil<D,R,C,T1,T2> getHashUtil() {
+        return base.getHashUtil();
+    }
+
+    public void setHashUtil(HashUtil<D,R,C,T1,T2> t) {
+        base.setHashUtil(t);
+    }
+
+    public GraphUtil<D,R,C> getGraphUtil() {
+        return base.getGraphUtil();
+    }
+
+    public void setGraphUtil(GraphUtil<D,R,C> t) {
+        base.setGraphUtil(t);
+    }
+
+    public abstract void execute() throws ZinggClientException ;
+
+    
+    public void setPipeUtil(PipeUtilBase<S,D,R,C> pipeUtil) {
+        base.setPipeUtil(pipeUtil);
+        
+    }
+
+   
+    public void setDSUtil(DSUtil<S,D,R,C> pipeUtil) {
+       base.setDSUtil(pipeUtil);
+        
+    }
+
+    public DSUtil<S,D,R,C> getDSUtil() {
+        return base.dsUtil;
+    }
+
+    
+    public PipeUtilBase<S,D,R,C> getPipeUtil() {
+        return base.pipeUtil;
+    }
+
+    public BlockingTreeUtil<S,D,R,C> getBlockingTreeUtil() {
+        return base.blockingTreeUtil;
+    }
+
 
 
   

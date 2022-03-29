@@ -19,7 +19,7 @@ import zingg.util.DSUtil;
 import zingg.util.ModelUtil;
 import zingg.util.PipeUtilBase;
 
-public abstract class Trainer<S,D,R,C> extends ZinggBase<S,D,R,C>{
+public abstract class Trainer<S,D,R,C,T1,T2> extends ZinggBase<S,D,R,C,T1,T2>{
 
 	protected static String name = "zingg.Trainer";
 	public static final Log LOG = LogFactory.getLog(Trainer.class);    
@@ -41,7 +41,7 @@ public abstract class Trainer<S,D,R,C> extends ZinggBase<S,D,R,C>{
 			LOG.warn("Training on negative pairs - " + negatives.count());
 				
 			ZFrame<D,R,C> testData = getPipeUtil().read(true, args.getNumPartitions(), false, args.getData());
-			Tree<Canopy> blockingTree = getBlockingTreeUtil().createBlockingTreeFromSample(testData,  positives, 0.5,
+			Tree<Canopy<R>> blockingTree = getBlockingTreeUtil().createBlockingTreeFromSample(testData,  positives, 0.5,
 					-1, args, hashFunctions);
 			if (blockingTree == null || blockingTree.getSubTrees() == null) {
 				LOG.warn("Seems like no indexing rules have been learnt");
@@ -49,7 +49,7 @@ public abstract class Trainer<S,D,R,C> extends ZinggBase<S,D,R,C>{
 			getBlockingTreeUtil().writeBlockingTree(blockingTree, args);
 			LOG.info("Learnt indexing rules and saved output at " + args.getZinggDir());
 			// model
-			Model model = ModelUtil.createModel(positives, negatives, new Model(this.featurers), getContext());
+			Model model = getModelUtil().createModel(positives, negatives, new Model(this.featurers), getContext());
 			model.save(args.getModel());
 			LOG.info("Learnt similarity rules and saved output at " + args.getZinggDir());
 			Analytics.track(Metric.TRAINING_MATCHES, positives.count(), args.getCollectMetrics());

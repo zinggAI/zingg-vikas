@@ -31,7 +31,7 @@ import zingg.util.GraphUtil;
 import zingg.util.ModelUtil;
 import zingg.util.PipeUtilBase;
 
-public abstract class Matcher<S,D,R,C> extends ZinggBase<S,D,R,C>{
+public abstract class Matcher<S,D,R,C,T1,T2> extends ZinggBase<S,D,R,C,T1,T2>{
 
 
 	protected static String name = "zingg.Matcher";

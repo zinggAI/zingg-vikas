@@ -23,7 +23,7 @@ public abstract class BlockFunction<R> implements MapFunction<R,R> {
     public R call(R r) {
         StringBuilder bf = new StringBuilder();
         bf = Block.applyTree(r, tree, tree.getHead(), bf);
-        Seq<Object> s = null; //TODOr.toSeq();
+        Seq<Object> s = toSeq(r);
         List<Object> seqList = JavaConversions.seqAsJavaList(s);
         List<Object> returnList = new ArrayList<Object>(seqList.size()+1);
         returnList.addAll(seqList);

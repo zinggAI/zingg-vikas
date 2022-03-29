@@ -7,6 +7,7 @@ import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.types.DataType;
 
 import zingg.ZinggBase;
 import zingg.client.Arguments;
@@ -20,16 +21,13 @@ import zingg.util.GraphUtil;
 import zingg.util.HashUtil;
 import zingg.util.PipeUtilBase;
 import zingg.spark.util.SparkDSUtil;
+import zingg.spark.util.SparkGraphUtil;
 
-public class SparkBase extends ZinggBase<SparkSession, Dataset<Row>, Row, Column>{
+public class SparkBase extends ZinggBase<SparkSession, Dataset<Row>, Row,Column,DataType,DataType>{
 
     JavaSparkContext ctx;
     public static final Log LOG = LogFactory.getLog(SparkBase.class);
-    PipeUtilBase pipeUtil;
-    HashUtil hashUtil;
-    DSUtil dsUtil;
-    GraphUtil graphUtil;
-    BlockingTreeUtil blockingTreeUtil;
+    
 
     @Override
     public void init(Arguments args, String license)
@@ -50,7 +48,7 @@ public class SparkBase extends ZinggBase<SparkSession, Dataset<Row>, Row, Column
             setPipeUtil(new SparkPipeUtil(context));
             setDSUtil(new SparkDSUtil());
             setHashUtil(new SparkHashUtil());
-            setGraphUtil(new GraphUtil());
+            setGraphUtil(new SparkGraphUtil());
             
         }
         catch(Throwable e) {
@@ -75,60 +73,33 @@ public class SparkBase extends ZinggBase<SparkSession, Dataset<Row>, Row, Column
         if (ctx != null) ctx.stop();
     }
 
-   
-    public void copyContext(ZinggBase<SparkSession, Dataset<Row>, Row, Column> b) {
-            super.copyContext(b);
-            this.context = b.getContext();
-    }
-
-    public HashUtil getHashUtil() {
-        return hashUtil;
-    }
-
-    public void setHashUtil(HashUtil t) {
-        hashUtil = t;
-    }
-
-    public GraphUtil getGraphUtil() {
-        return graphUtil;
-    }
-
-    public void setGraphUtil(GraphUtil t) {
-        graphUtil = t;
-    }
-
     @Override
     public void execute() throws ZinggClientException {
-        // TODO Auto-generated method stub
-        
+
+    }   
+
+    
+    public void setHashUtil(HashUtil<Dataset<Row>, Row, Column, DataType, DataType> t) {
+        this.hashUtil = t;
     }
 
-    @Override
+    
+
+    public void setGraphUtil(GraphUtil<Dataset<Row>, Row, Column> t) {
+        this.graphUtil = t;
+    }
+
+    
+    
     public void setPipeUtil(PipeUtilBase<SparkSession, Dataset<Row>, Row, Column> pipeUtil) {
-        this.pipeUtil = pipeUtil;
-        
+        this.pipeUtil = pipeUtil;        
     }
 
-    @Override
+   
     public void setDSUtil(DSUtil<SparkSession, Dataset<Row>, Row, Column> pipeUtil) {
-       this.dsUtil = pipeUtil;
-        
+       this.dsUtil = pipeUtil;        
     }
 
-    @Override
-    public DSUtil<SparkSession, Dataset<Row>, Row, Column> getDSUtil() {
-        return dsUtil;
-    }
-
-    @Override
-    public PipeUtilBase<SparkSession, Dataset<Row>, Row, Column> getPipeUtil() {
-        return this.pipeUtil;
-    }
-
-    @Override
-    public BlockingTreeUtil getBlockingTreeUtil() {
-        return this.blockingTreeUtil;
-    }
 
 
   

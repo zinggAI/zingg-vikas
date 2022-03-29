@@ -37,7 +37,11 @@ public class Block<D,R,C,T,T1> implements Serializable {
 	ZFrame<D,R,C> training;
 	protected ListMap<HashFunction, String> childless;
 
-	protected Block(ZFrame<D,R,C> training, ZFrame<D,R,C> dupes) {
+	public Block() {
+		
+	}
+
+	public Block(ZFrame<D,R,C> training, ZFrame<D,R,C> dupes) {
 		this.training = training;
 		this.dupes = dupes;
 		childless = new ListMap<HashFunction, String>();
