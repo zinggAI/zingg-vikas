@@ -190,7 +190,7 @@ public abstract class ZinggBase<S,D, R, C, T1,T2> implements Serializable, IZing
         return base.pipeUtil;
     }
 
-    public BlockingTreeUtil<S,D,R,C> getBlockingTreeUtil() {
+    public BlockingTreeUtil<D,R,C,T1,T2> getBlockingTreeUtil() {
         return base.blockingTreeUtil;
     }
 

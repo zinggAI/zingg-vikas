@@ -140,8 +140,8 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
         return new SparkFrame(df.withColumn(s, functions.lit(c)));
     }
 
-    public ZFrame<Dataset<Row>, Row, Column> withColumn(String s, Column c){
-        return new SparkFrame(df.withColumn(s, c));
+    public ZFrame<Dataset<Row>, Row, Column> withColumn(String s, String c){
+        return new SparkFrame(df.withColumn(s, functions.lit(c)));
     }
 
     public ZFrame<Dataset<Row>, Row, Column> repartition(int nul){
@@ -194,5 +194,20 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
 
     public void show() {
         df.show();
+    }
+
+    @Override
+    public ZFrame<Dataset<Row>, Row, Column> drop(String... c) {
+        return new SparkFrame(df.drop(c));
+    }
+
+    public ZFrame<Dataset<Row>, Row, Column> withColumn(String s,Column c) {
+        return new SparkFrame(df.withColumn(s,c));
+
+    }
+
+    public Column concat(Column s,Column c) {
+        return functions.concat(s,c);
+
     }
 }

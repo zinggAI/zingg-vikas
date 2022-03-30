@@ -86,12 +86,7 @@ public abstract class Matcher<S,D,R,C,T1,T2> extends ZinggBase<S,D,R,C,T1,T2>{
 		return allEqual;
 	}
 
-	protected Model getModel() {
-		Model model = new Model(this.featurers);
-		model.register(getContext());
-		model.load(args.getModel());
-		return model;
-	}
+	protected abstract Model getModel();
 
 	protected ZFrame<D,R,C>selectColsFromBlocked(ZFrame<D,R,C>blocked) {
 		return blocked.select(ColName.ID_COL, ColName.HASH_COL);
@@ -173,7 +168,7 @@ public abstract class Matcher<S,D,R,C,T1,T2> extends ZinggBase<S,D,R,C,T1,T2>{
 			*/
 			
 			dupesActual = dupesActual.cache();
-			ZFrame<D,R,C>graph = GraphUtil.buildGraph(blocked, dupesActual).cache();
+			ZFrame<D,R,C>graph = getGraphUtil().buildGraph(blocked, dupesActual).cache();
 			//graph.toJavaRDD().saveAsTextFile("/tmp/zgraph");
 			
 			//write score

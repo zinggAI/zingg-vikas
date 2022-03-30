@@ -38,6 +38,7 @@ public interface ZFrame<T, R, C> {
     public ZFrame<T,R,C> dropDuplicates(String[] c);
 
     public ZFrame<T,R,C> drop(String c);
+    public ZFrame<T,R,C> drop(String... c);
     public ZFrame<T,R,C> except(ZFrame<T,R,C> c);
 
     public ZFrame<T,R,C> groupByMinMax(C c);
@@ -47,9 +48,11 @@ public interface ZFrame<T, R, C> {
     public ZFrame<T,R,C> unionByName(ZFrame<T,R,C> other, boolean flag);
 
     public ZFrame<T,R,C> withColumn(String s, int c);
+    public ZFrame<T,R,C> withColumn(String s, String c);
     public ZFrame<T,R,C> withColumn(String s, double c);
-
     public ZFrame<T,R,C> withColumn(String s, C c);
+
+    
     public ZFrame<T,R,C> repartition(int num);
     public ZFrame<T,R,C> repartition(int num, C c);
 
@@ -67,8 +70,10 @@ public interface ZFrame<T, R, C> {
     
     public C equalTo(String c, int e);
     public C equalTo(String c, double e);
+    public C concat(C a, C b);
 
 	public C notEqual(String c, int e);
+
 
     public void show(int num);
     public void show();

@@ -82,9 +82,7 @@ public class SparkBase extends ZinggBase<SparkSession, Dataset<Row>, Row,Column,
     public void setHashUtil(HashUtil<Dataset<Row>, Row, Column, DataType, DataType> t) {
         this.hashUtil = t;
     }
-
     
-
     public void setGraphUtil(GraphUtil<Dataset<Row>, Row, Column> t) {
         this.graphUtil = t;
     }
@@ -98,6 +96,10 @@ public class SparkBase extends ZinggBase<SparkSession, Dataset<Row>, Row,Column,
    
     public void setDSUtil(DSUtil<SparkSession, Dataset<Row>, Row, Column> pipeUtil) {
        this.dsUtil = pipeUtil;        
+    }
+
+    public void setBlokingTreeUtil(BlockingTreeUtil<Dataset<Row>, Row, Column, DataType, DataType> d) {
+        this.blockingTreeUtil = d;
     }
 
 

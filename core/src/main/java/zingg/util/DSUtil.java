@@ -63,6 +63,17 @@ public abstract class DSUtil<S, D, R, C> {
 		return pairs;
 	}
 
+	public ZFrame<D, R, C> addUniqueCol(ZFrame<D, R, C> dupesActual, String colName) {
+		String append = System.currentTimeMillis() + ":";
+		dupesActual = dupesActual.withColumn(colName + "temp", 
+				append);
+		dupesActual = dupesActual.withColumn(colName,
+				dupesActual.concat(dupesActual.col(colName + "temp"),
+						dupesActual.col(colName)));
+		dupesActual = dupesActual.drop(colName + "temp");
+		return dupesActual;
+	}
+
 	/*
 
 	public  ZFrame<D, R, C> joinOnNamedColAndDropIt(ZFrame<D, R, C> lines, ZFrame<D, R, C> lines1, String joinColumn) {

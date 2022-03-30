@@ -70,6 +70,6 @@ public class BlockingTreeUtil<D,R,C,T,T1> {
 	}
 
 	public  Tree<Canopy<R>> readBlockingTree(Arguments args) throws Exception {
-		return (Tree<Canopy<R>>) Util.readfromFile(args.getBlockFile());;
+		return (Tree<Canopy<R>>) Util.readfromFile(args.getBlockFile());
 	}
 }
