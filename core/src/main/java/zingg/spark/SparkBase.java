@@ -19,6 +19,7 @@ import zingg.util.BlockingTreeUtil;
 import zingg.util.DSUtil;
 import zingg.util.GraphUtil;
 import zingg.util.HashUtil;
+import zingg.util.ModelUtil;
 import zingg.util.PipeUtilBase;
 import zingg.spark.util.SparkDSUtil;
 import zingg.spark.util.SparkGraphUtil;
@@ -82,7 +83,7 @@ public class SparkBase extends ZinggBase<SparkSession, Dataset<Row>, Row,Column,
     public void setHashUtil(HashUtil<Dataset<Row>, Row, Column, DataType, DataType> t) {
         this.hashUtil = t;
     }
-    
+
     public void setGraphUtil(GraphUtil<Dataset<Row>, Row, Column> t) {
         this.graphUtil = t;
     }
@@ -102,7 +103,12 @@ public class SparkBase extends ZinggBase<SparkSession, Dataset<Row>, Row,Column,
         this.blockingTreeUtil = d;
     }
 
+    public void setModelUtil(ModelUtil<SparkSession, Dataset<Row>, Row, Column> t) {
+        this.modelUtil = t;
+    }
 
-
+    public ModelUtil<SparkSession, Dataset<Row>, Row, Column>  getModelUtil() {
+        return modelUtil;
+    }
   
  }

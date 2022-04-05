@@ -49,7 +49,7 @@ public abstract class Trainer<S,D,R,C,T1,T2> extends ZinggBase<S,D,R,C,T1,T2>{
 			getBlockingTreeUtil().writeBlockingTree(blockingTree, args);
 			LOG.info("Learnt indexing rules and saved output at " + args.getZinggDir());
 			// model
-			Model model = getModelUtil().createModel(positives, negatives, new Model(this.featurers), getContext());
+			Model<S,D,R,C> model = getModelUtil().createModel(positives, negatives, this.featurers, getContext(), false);
 			model.save(args.getModel());
 			LOG.info("Learnt similarity rules and saved output at " + args.getZinggDir());
 			Analytics.track(Metric.TRAINING_MATCHES, positives.count(), args.getCollectMetrics());
@@ -60,6 +60,8 @@ public abstract class Trainer<S,D,R,C,T1,T2> extends ZinggBase<S,D,R,C,T1,T2>{
 			throw new ZinggClientException(e.getMessage());
 		}
     }
+
+
 
 		    
 }

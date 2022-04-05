@@ -16,7 +16,7 @@ import zingg.client.ZFrame;
 import zingg.client.util.ListMap;
 import zingg.client.util.Util;
 
-public class BlockingTreeUtil<D,R,C,T,T1> {
+public abstract class BlockingTreeUtil<D,R,C,T,T1> {
 
     public final Log LOG = LogFactory.getLog(BlockingTreeUtil.class);
 	
@@ -72,4 +72,6 @@ public class BlockingTreeUtil<D,R,C,T,T1> {
 	public  Tree<Canopy<R>> readBlockingTree(Arguments args) throws Exception {
 		return (Tree<Canopy<R>>) Util.readfromFile(args.getBlockFile());
 	}
+
+	public abstract ZFrame<D,R,C> getBlockHashes(ZFrame<D,R,C> testData, Tree<Canopy<R>> tree);
 }

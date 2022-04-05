@@ -260,4 +260,6 @@ public abstract class DSUtil<S, D, R, C> {
 				.filter(f -> !(f.getMatchType() == null || f.getMatchType().equals(MatchType.DONT_USE)))
 				.collect(Collectors.toList());
 	}
+
+	public abstract ZFrame<D, R, C> addClusterRowNumber(ZFrame<D, R, C> ds);
 }

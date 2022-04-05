@@ -6,15 +6,6 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.spark.sql.Column;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.functions;
-import org.apache.spark.sql.catalyst.encoders.RowEncoder;
-import org.apache.spark.sql.expressions.Window;
-import org.apache.spark.sql.expressions.WindowSpec;
-
-import scala.collection.JavaConverters;
-import zingg.block.Block;
 import zingg.block.Canopy;
 import zingg.block.Tree;
 import zingg.model.Model;
@@ -25,11 +16,6 @@ import zingg.util.Analytics;
 import zingg.client.util.ColName;
 import zingg.client.util.ColValues;
 import zingg.util.Metric;
-import zingg.client.util.Util;
-import zingg.util.DSUtil;
-import zingg.util.GraphUtil;
-import zingg.util.ModelUtil;
-import zingg.util.PipeUtilBase;
 
 public abstract class Matcher<S,D,R,C,T1,T2> extends ZinggBase<S,D,R,C,T1,T2>{
 
@@ -48,12 +34,12 @@ public abstract class Matcher<S,D,R,C,T1,T2> extends ZinggBase<S,D,R,C,T1,T2>{
 	protected ZFrame<D,R,C> getBlocked(ZFrame<D,R,C> testData) throws Exception{
 		LOG.debug("Blocking model file location is " + args.getBlockFile());
 		Tree<Canopy<R>> tree = getBlockingTreeUtil().readBlockingTree(args);
-		ZFrame<D,R,C> blocked = getBlockHashes(testData, tree);		
+		ZFrame<D,R,C> blocked = getBlockingTreeUtil().getBlockHashes(testData, tree);		
 		ZFrame<D,R,C> blocked1 = blocked.repartition(args.getNumPartitions(), blocked.col(ColName.HASH_COL)); //.cache();
 		return blocked1;
 	}
 
-	protected abstract ZFrame<D,R,C> getBlockHashes(ZFrame<D,R,C> testData, Tree<Canopy<R>> tree);
+	
 	
 	protected ZFrame<D,R,C> getBlocks(ZFrame<D,R,C>blocked) throws Exception{
 		return getDSUtil().joinWithItself(blocked, ColName.HASH_COL, true).cache();

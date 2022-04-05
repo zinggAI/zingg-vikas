@@ -78,6 +78,14 @@ public interface ZFrame<T, R, C> {
     public void show(int num);
     public void show();
 
+    public String showSchema();
+    public ZFrame<T,R,C> orderBy(String c);
+    public ZFrame<T,R,C> sortAscending(String c);
+    public ZFrame<T,R,C> sortDescending(String c);
+
+
+    public ZFrame<T,R,C> limit(int l);
+
 
     
 }

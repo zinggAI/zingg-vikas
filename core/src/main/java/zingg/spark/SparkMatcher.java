@@ -44,13 +44,7 @@ public class SparkMatcher extends Matcher<SparkSession,Dataset<Row>,Row,Column,D
 	protected static String name = "zingg.Matcher";
 	public static final Log LOG = LogFactory.getLog(SparkMatcher.class);    
 
-	@Override
-	protected ZFrame<Dataset<Row>,Row,Column> getBlockHashes(ZFrame<Dataset<Row>,Row,Column> testData, Tree<Canopy<Row>> tree) {
-		Dataset<Row> retDF = testData.df().map(new SparkBlockFunction(tree), RowEncoder.apply(
-			new Block<Dataset<Row>,Row,Column,DataType,DataType>().appendHashCol(testData.df().schema())));
-		return new SparkFrame(retDF);
-
-	}
+	
 
 	@Override
 	public void cleanup() throws ZinggClientException {

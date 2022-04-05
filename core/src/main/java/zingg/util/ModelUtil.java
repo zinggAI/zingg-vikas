@@ -1,9 +1,14 @@
 package zingg.util;
+import zingg.client.Arguments;
+import zingg.client.FieldDefinition;
 import zingg.client.ZFrame;
 import zingg.client.ZinggClientException;
 import zingg.client.util.ColName;
 import zingg.client.util.ColValues;
+import zingg.feature.Feature;
 import zingg.model.Model;
+
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -14,7 +19,7 @@ public abstract class ModelUtil<S,D,R,C> {
     public static final Log LOG = LogFactory.getLog(ModelUtil.class);
 
 	public Model<S,D,R,C> createModel(ZFrame<D,R,C> positives,
-        ZFrame<D,R,C> negatives, Model<S,D,R,C> model, S spark) throws Exception, ZinggClientException {
+        ZFrame<D,R,C> negatives, Map<FieldDefinition, Feature> featurers, S spark, boolean isLabel) throws Exception, ZinggClientException {
         LOG.info("Learning similarity rules");
         ZFrame<D,R,C> posLabeledPointsWithLabel = positives.withColumn(ColName.MATCH_FLAG_COL, ColValues.MATCH_TYPE_MATCH);
         posLabeledPointsWithLabel = posLabeledPointsWithLabel.cache();
@@ -27,10 +32,16 @@ public abstract class ModelUtil<S,D,R,C> {
                     + posLabeledPointsWithLabel.count() + ", "
                     + negLabeledPointsWithLabel.count());
         }
+        Model<S,D,R,C> model = getModel(featurers, isLabel);
         model.register(spark);
         model.fit(posLabeledPointsWithLabel, negLabeledPointsWithLabel);
         return model;
     }
+
+    public abstract Model<S,D,R,C> getModel(Map<FieldDefinition, Feature> featurers, boolean isLabel);
+
+    public abstract Model<S,D,R,C> loadModel(Map<FieldDefinition, Feature> featurers, boolean isLabel, Arguments args);
+
 
 
 

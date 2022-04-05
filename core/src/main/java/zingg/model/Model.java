@@ -21,8 +21,7 @@ public abstract class Model<S,D,R,C> implements Serializable {
 	}
 	
 	
-	public void register(S spark) {
-	}
+	public abstract void register(S spark) ;
 	
 	public static double[] getGrid(double begin, double end, double jump, boolean isMultiple) {
 		List<Double> alphaList = new ArrayList<Double>();

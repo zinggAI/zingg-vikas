@@ -131,7 +131,8 @@ public class SparkModel extends Model<SparkSession, Dataset<Row>, Row, Column>{
 		return predict(data, true);
 	}
 	
-	public SparkFrame predict(ZFrame<Dataset<Row>,Row,Column> data, boolean isDrop) {
+	@Override
+	public ZFrame<Dataset<Row>,Row,Column> predict(ZFrame<Dataset<Row>,Row,Column> data, boolean isDrop) {
 		//create features
 		LOG.info("threshold while predicting is " + lr.getThreshold());
 		//lr.setThreshold(0.95);
@@ -164,6 +165,19 @@ public class SparkModel extends Model<SparkSession, Dataset<Row>, Row, Column>{
 	
 	public ZFrame<Dataset<Row>,Row,Column> transform(ZFrame<Dataset<Row>,Row,Column> i) {
 		return transform(i.df());
+	}
+
+
+
+	@Override
+	public void register(SparkSession spark) {
+		if (featureCreators != null) {
+			for (BaseSimilarityFunction bsf: featureCreators) {
+				bsf.register(spark);
+			}
+		}
+		vve.register(spark);
+		
 	}
 	
 }

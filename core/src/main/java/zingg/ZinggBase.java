@@ -19,6 +19,7 @@ import zingg.util.DSUtil;
 import zingg.util.GraphUtil;
 import zingg.client.util.ListMap;
 import zingg.util.Metric;
+import zingg.util.ModelUtil;
 import zingg.feature.Feature;
 import zingg.feature.FeatureFactory;
 import zingg.hash.HashFunction;
@@ -47,6 +48,7 @@ public abstract class ZinggBase<S,D, R, C, T1,T2> implements Serializable, IZing
     protected HashUtil<D,R,C,T1,T2> hashUtil;
     protected DSUtil<S,D,R,C> dsUtil;
     protected GraphUtil<D,R,C> graphUtil;
+    protected ModelUtil<S,D,R,C> modelUtil;
     protected BlockingTreeUtil<D,R,C,T1,T2> blockingTreeUtil;
     ZinggBase base;
 
@@ -165,6 +167,14 @@ public abstract class ZinggBase<S,D, R, C, T1,T2> implements Serializable, IZing
 
     public void setGraphUtil(GraphUtil<D,R,C> t) {
         base.setGraphUtil(t);
+    }
+
+    public void setModelUtil(ModelUtil<S,D,R,C> t) {
+        base.setModelUtil(t);
+    }
+
+    public ModelUtil<S,D,R,C>  getModelUtil() {
+        return base.getModelUtil();
     }
 
     public abstract void execute() throws ZinggClientException ;

@@ -210,4 +210,25 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
         return functions.concat(s,c);
 
     }
+
+    public String showSchema(){
+        return df.schema().toString();
+    }
+
+    public ZFrame<Dataset<Row>,Row,Column> orderBy(String c){
+        return new SparkFrame(df.orderBy(c));
+
+    }
+
+    public ZFrame<Dataset<Row>,Row,Column> limit(int l) {
+        return new SparkFrame(df.limit(l));
+    }
+
+    public ZFrame<Dataset<Row>,Row,Column>  sortAscending(String c){
+        return new SparkFrame(df.sort(functions.asc(c)));
+    }
+    public ZFrame<Dataset<Row>,Row,Column>  sortDescending(String c){
+        return new SparkFrame(df.sort(functions.desc(c)));
+    }
+
 }
