@@ -26,11 +26,11 @@ import zingg.util.GraphUtil;
 
 public class SparkGraphUtil implements GraphUtil<Dataset<Row>, Row, Column> {
 
-	public ZFrame<Dataset<Row>, Row, Column> buildGraph(ZFrame<Dataset<Row>, Row, Column> v, ZFrame<Dataset<Row>, Row, Column> ed) {
+	public ZFrame<Dataset<Row>, Row, Column> buildGraph(ZFrame<Dataset<Row>, Row, Column> vOrig, ZFrame<Dataset<Row>, Row, Column> ed) {
 		// we need to transform the input here by using stop words
 		//rename id field which is a common field in data to another field as it 
 		//clashes with graphframes :-(
-		Dataset<Row> vertices = v.df();	
+		Dataset<Row> vertices = vOrig.df();	
 		Dataset<Row> edges = ed.df();
 		vertices = vertices.withColumnRenamed(ColName.ID_EXTERNAL_ORIG_COL, ColName.ID_EXTERNAL_COL);
 		

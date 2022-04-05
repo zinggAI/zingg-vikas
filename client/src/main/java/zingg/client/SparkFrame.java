@@ -79,7 +79,14 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
     }
 
     public ZFrame<Dataset<Row>, Row, Column> joinRight(ZFrame<Dataset<Row>, Row, Column> lines1, String joinColumn) {
-        return new SparkFrame(df.join(lines1.df(), df.col(joinColumn).equalTo(lines1.df().col(ColName.COL_PREFIX + joinColumn)), "right"));
+        return join(lines1, joinColumn, true, "right");
+    }
+
+    public ZFrame<Dataset<Row>, Row, Column> join(ZFrame<Dataset<Row>, Row, Column> lines1, String joinColumn, boolean addPrefixToCol, String joinType) {
+        String joinColumn1 = joinColumn;
+        joinColumn1 = (addPrefixToCol ? ColName.COL_PREFIX + joinColumn1 : joinColumn1);
+        return new SparkFrame(df.join(lines1.df(), df.col(joinColumn).equalTo(lines1.df().col(joinColumn1)), joinType));
+
     }
 
     public Column col(String colName) {
@@ -229,6 +236,35 @@ public class SparkFrame implements ZFrame<Dataset<Row>, Row, Column> {
     }
     public ZFrame<Dataset<Row>,Row,Column>  sortDescending(String c){
         return new SparkFrame(df.sort(functions.desc(c)));
+    }
+
+    @Override
+    public String getAsString(Row r, String colName) {
+        return r.getAs(colName);
+    }
+
+    @Override
+    public double getAsDouble(Row r, String colName) {
+        return r.getAs(colName);
+    }
+    @Override
+    public int getAsInt(Row r, String colName) {
+        return r.getAs(colName);
+    }
+
+    @Override
+    public Row head() {
+        return df.head();
+    }
+
+    @Override
+    public void show(boolean a){
+        df.show(a);
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return df.isEmpty();
     }
 
 }

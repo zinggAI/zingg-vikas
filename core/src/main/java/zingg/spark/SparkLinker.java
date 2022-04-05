@@ -45,14 +45,7 @@ public class SparkLinker extends Linker<SparkSession, Dataset<Row>, Row, Column,
 		setZinggOptions(ZinggOptions.LINK);
 	}
 
-	@Override
-	protected ZFrame<Dataset<Row>,Row,Column> getBlockHashes(ZFrame<Dataset<Row>,Row,Column> testData, Tree<Canopy<Row>> tree) {
-		Dataset<Row> retDF = testData.df().map(new SparkBlockFunction(tree), RowEncoder.apply(
-			new Block<Dataset<Row>,Row,Column,DataType,DataType>().appendHashCol(testData.df().schema())));
-		return new SparkFrame(retDF);
-
-	}
-
+	
 	@Override
 	public void cleanup() throws ZinggClientException {
 		// TODO Auto-generated method stub

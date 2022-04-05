@@ -47,7 +47,7 @@ public class SparkBase extends ZinggBase<SparkSession, Dataset<Row>, Row,Column,
             loadFeatures();
             ctx.setCheckpointDir("/tmp/checkpoint");	
             setPipeUtil(new SparkPipeUtil(context));
-            setDSUtil(new SparkDSUtil());
+            setDSUtil(new SparkDSUtil(context));
             setHashUtil(new SparkHashUtil());
             setGraphUtil(new SparkGraphUtil());
             

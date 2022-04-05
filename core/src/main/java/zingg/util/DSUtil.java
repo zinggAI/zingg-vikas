@@ -1,12 +1,5 @@
 package zingg.util;
 
-import org.apache.spark.sql.Column;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.functions;
-
-import scala.collection.JavaConverters;
 import zingg.client.Arguments;
 import zingg.client.FieldDefinition;
 import zingg.client.MatchType;
@@ -24,7 +17,24 @@ import org.apache.commons.logging.LogFactory;
 
 public abstract class DSUtil<S, D, R, C> {
 
+	S session;
+
+	
+	
     public Log LOG = LogFactory.getLog(DSUtil.class);	
+
+	public DSUtil(S s) {
+		this.session = s;
+	}
+
+	public S getSession() {
+		return this.session;
+	}
+
+	public void setSession(S session) {
+		this.session = session;
+	}
+
 
 	public String[] getPrefixedColumns(String[] cols) {
 		for (int i=0; i < cols.length; ++i) {

@@ -21,7 +21,8 @@ public interface ZFrame<T, R, C> {
     public ZFrame<T,R,C> join(ZFrame<T,R,C> lines1, String joinColumn);
 
     public ZFrame<T,R,C> joinRight(ZFrame<T,R,C> lines1, String joinColumn);
-    
+
+    public ZFrame<T,R,C> join(ZFrame<T,R,C> lines1, String joinColumn, boolean addPrefixToCol, String jointype);    
 
     public C col(String colname);
     
@@ -86,6 +87,16 @@ public interface ZFrame<T, R, C> {
 
     public ZFrame<T,R,C> limit(int l);
 
+    public String getAsString(R r, String colName);
 
+    public double getAsDouble(R r, String colName);
+
+    public int getAsInt(R r, String colName);
+
+    public R head();
+
+    public void show(boolean a);
+
+    public boolean isEmpty();
     
 }

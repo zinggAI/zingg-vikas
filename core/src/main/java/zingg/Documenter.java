@@ -13,6 +13,7 @@ import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.functions;
 
+import zingg.client.ZFrame;
 import zingg.client.ZinggClientException;
 import zingg.client.ZinggOptions;
 import zingg.client.pipe.Pipe;
@@ -27,7 +28,7 @@ import freemarker.template.*;
 import java.util.*;
 import java.io.*;
 
-public class Documenter extends ZinggBase {
+public abstract class Documenter<S,D,R,C,T1,T2> extends ZinggBase<S,D,R,C,T1,T2> {
 
 	protected static String name = "zingg.Documenter";
 	public static final Log LOG = LogFactory.getLog(Documenter.class);
@@ -39,10 +40,10 @@ public class Documenter extends ZinggBase {
 	public void execute() throws ZinggClientException {
 		try {
 			LOG.info("Document generation in progress");
-			Dataset<Row> markedRecords = PipeUtilBase.read(spark, false, false, PipeUtilBase.getTrainingDataMarkedPipe(args));
+			ZFrame<D,R,C> markedRecords = getPipeUtil().read(false, false, getPipeUtil().getTrainingDataMarkedPipe(args));
 			markedRecords = markedRecords.cache();
 			//List<Column> displayCols = DSUtil.getFieldDefColumns(markedRecords, args, false);
-			List<Row> clusterIDs = markedRecords.select(ColName.CLUSTER_COLUMN).distinct().collectAsList();
+			List<R> clusterIDs = markedRecords.select(ColName.CLUSTER_COLUMN).distinct().collectAsList();
 			int totalPairs = clusterIDs.size();
 			/* Create a data-model */
 			Map<String, Object> root = new HashMap<String, Object>();
@@ -94,7 +95,7 @@ public class Documenter extends ZinggBase {
 
 		//List<String> textList = Collections.singletonList(writer.toString());
 		
-		//Dataset<Row> data = spark.createDataset(textList, Encoders.STRING()).toDF();
+		//ZFrame<D,R,C> data = spark.createDataset(textList, Encoders.STRING()).toDF();
 
 		//PipeUtil.write(data, args, ctx, PipeUtil.getModelDocumentationPipe(args));
         file.close();
