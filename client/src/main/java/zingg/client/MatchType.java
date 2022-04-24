@@ -56,6 +56,8 @@ public enum MatchType implements Serializable {
 	 */
 	COMPOSITE("COMPOSITE"),
 	ALPHANUMERIC_WITH_UNITS("ALPHANUMERIC_WITH_UNITS"),
+	ALPHANUMERIC_NULL("ALPHANUMERIC_NULL"),
+	ZIP("ZIP"),
 	DONT_USE("DONT USE");
 
 	private String value;

@@ -95,7 +95,7 @@ public class TrainingDataFinder extends ZinggBase{
 				Dataset<Row> sampleOrginal = data.sample(false, args.getLabelDataSampleSize()).repartition(args.getNumPartitions()).persist(StorageLevel.MEMORY_ONLY());
 				LOG.info("Preprocessing DS for stopWords");
 
-				Dataset<Row> sample = StopWords.preprocessForStopWords(spark, args, sampleOrginal);
+				Dataset<Row> sample = StopWords.preprocessForStopWords(spark, args, sampleOrginal).persist(StorageLevel.MEMORY_ONLY());
 
 				Tree<Canopy> tree = BlockingTreeUtil.createBlockingTree(sample, posPairs, 1, -1, args, hashFunctions);			
 				Dataset<Row> blocked = sample.map(new Block.BlockFunction(tree), RowEncoder.apply(Block.appendHashCol(sample.schema())));

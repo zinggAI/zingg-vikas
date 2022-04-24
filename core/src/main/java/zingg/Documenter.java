@@ -47,6 +47,7 @@ public class Documenter extends ZinggBase {
 			LOG.info("Document generation starts");
 			Dataset<Row> markedRecords = PipeUtil.read(spark, false, false, PipeUtil.getTrainingDataMarkedPipe(args));		
 			markedRecords = markedRecords.cache();
+			markedRecords.show();
 			//List<Column> displayCols = DSUtil.getFieldDefColumns(markedRecords, args, false);
 			List<Row> clusterIDs = markedRecords.select(ColName.CLUSTER_COLUMN).distinct().collectAsList();
 			int totalPairs = clusterIDs.size();

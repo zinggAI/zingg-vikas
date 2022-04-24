@@ -4,6 +4,7 @@ import zingg.client.FieldDefinition;
 import zingg.client.MatchType;
 import zingg.similarity.function.AJaroWinklerFunction;
 import zingg.similarity.function.AffineGapSimilarityFunction;
+import zingg.similarity.function.IsNullFunction;
 import zingg.similarity.function.JaccSimFunction;
 import zingg.similarity.function.JaroWinklerFunction;
 import zingg.similarity.function.NumbersJaccardFunction;
@@ -56,6 +57,7 @@ public class StringFeature extends BaseFeature<String> {
 			//addSimFunction(new AffineGapSimilarityFunction());
 			addSimFunction(new JaroWinklerFunction());
 			addSimFunction(new NumbersJaccardFunction());
+			addSimFunction(new IsNullFunction());
 			//addSimFunction(new ProductCodeFunction());
 			// simFunctions.add(new JaroWinklerFunction());
 		} else if (f.getMatchType() == MatchType.EXACT) {
