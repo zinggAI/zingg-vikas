@@ -15,7 +15,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.curator.shaded.com.google.common.hash.HashCode;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.functions;
-import net.snowflake.client.jdbc.internal.org.bouncycastle.jcajce.provider.symmetric.GOST28147.Mac;
 
 import org.apache.spark.sql.Dataset;
 

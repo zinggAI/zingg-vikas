@@ -18,7 +18,6 @@ import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 
-import net.snowflake.client.jdbc.internal.org.checkerframework.checker.units.qual.C;
 import zingg.client.FieldDefinition;
 import zingg.client.util.ListMap;
 import zingg.hash.HashFunction;
@@ -228,7 +227,8 @@ public class Block implements Serializable {
 				LOG.debug("Tree: ");
 				LOG.debug(tree);
 			}
-
+			LOG.debug(" Final tree is ");
+			LOG.debug(tree);
 			return tree;
 		}
 
