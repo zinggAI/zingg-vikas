@@ -145,8 +145,7 @@ public class Block implements Serializable {
 						}*/
 						if (least >= elimCount || elimCount == 0) {
 								least = elimCount;
-								if (elimCount ==0) return c;
-								best = c;		
+								can.put(c, j);	
 						}						
 			}
 		}
