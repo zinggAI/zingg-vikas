@@ -202,8 +202,8 @@ public class Canopy implements Serializable, Comparable<Canopy> {
 		//List<Row> uniqueHashes = newTraining.select(ColName.HASH_COL).distinct().collectAsList();
 		List<Row> uniqueHashes = newTraining.select(ColName.HASH_COL).groupBy(ColName.HASH_COL).agg(
 			functions.count(ColName.HASH_COL)
-			.alias("count"))
-			.filter("count>8").collectAsList();
+			.alias("count")).collectAsList();
+			//.filter("count>8").collectAsList();
 		for (Row row : uniqueHashes) {
 			Object key = row.get(0);
 			Dataset<Row> tupleList = newTraining.filter(newTraining.col(ColName.HASH_COL).equalTo(key))
