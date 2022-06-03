@@ -14,6 +14,7 @@ import zingg.client.ZinggOptions;
 import zingg.util.Analytics;
 import zingg.client.util.ColName;
 import zingg.client.util.ColValues;
+import zingg.distBlock.BFn;
 import zingg.util.Metric;
 
 import zingg.util.BlockingTreeUtil;
@@ -50,7 +51,7 @@ public class Trainer extends ZinggBase{
 			Dataset<Row> testDataOriginal = PipeUtil.read(spark, true, args.getNumPartitions(), false, args.getData());
 			Dataset<Row> testData = StopWords.preprocessForStopWords(spark, args, testDataOriginal);
 
-			Tree<Canopy> blockingTree = BlockingTreeUtil.createBlockingTreeFromSample(testData,  positives, 0.5,
+			Tree<BFn> blockingTree = BlockingTreeUtil.createBlockingTreeFromSample(testData,  positives, 0.5,
 					-1, args, hashFunctions);
 			if (blockingTree == null || blockingTree.getSubTrees() == null) {
 				LOG.warn("Seems like no indexing rules have been learnt");

@@ -23,6 +23,8 @@ import zingg.client.pipe.Pipe;
 import zingg.client.util.ColName;
 import zingg.client.util.ColValues;
 import zingg.client.util.Util;
+import zingg.distBlock.BFn;
+import zingg.distBlock.BTreeBuilder;
 import zingg.model.LabelModel;
 import zingg.model.Model;
 import zingg.preprocess.StopWords;
@@ -98,8 +100,8 @@ public class TrainingDataFinder extends ZinggBase{
 
 				Dataset<Row> sample = StopWords.preprocessForStopWords(spark, args, sampleOrginal);
 
-				Tree<Canopy> tree = BlockingTreeUtil.createBlockingTree(sample, posPairs, 1, -1, args, hashFunctions);			
-				Dataset<Row> blocked = sample.map(new Block.BlockFunction(tree), RowEncoder.apply(Block.appendHashCol(sample.schema())));
+				Tree<BFn> tree = BlockingTreeUtil.createBlockingTree(sample, posPairs, 1, -1, args, hashFunctions);			
+				Dataset<Row> blocked = sample.map(new BTreeBuilder.BlockFunction(tree), RowEncoder.apply(BTreeBuilder.appendHashCol(sample.schema())));
 				blocked = blocked.repartition(args.getNumPartitions(), blocked.col(ColName.HASH_COL)).cache();
 				Dataset<Row> blocks = DSUtil.joinWithItself(blocked, ColName.HASH_COL, true);
 				blocks = blocks.cache();	

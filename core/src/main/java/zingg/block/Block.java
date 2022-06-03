@@ -126,9 +126,11 @@ public class Block implements Serializable {
 		int maxElimination = 0;
 		Canopy best = null;
 		int i = 0;
-		HashMap<Canopy, Integer> can = new HashMap<Canopy, Integer>();
+		HashMap<Canopy, Long> can = new HashMap<Canopy, Long>();
 		for (Integer j : canopiesToTry.keySet()) {
 			Canopy c = canopiesToTry.get(j);
+			c.index = j;
+			//LOG.debug("trying for " + c);
 			c.training = node.training;
 			HashFunction function = c.getFunction();
 			if (!isFunctionUsed(tree, node, c.context.fieldName, function)) {
@@ -145,11 +147,21 @@ public class Block implements Serializable {
 						}*/
 						if (least >= elimCount || elimCount == 0) {
 								least = elimCount;
-								can.put(c, j);	
-						}						
-			}
+								LOG.debug("going to estimate " + c + " with elim count " + elimCount);
+								can.put(c, elimCount);	
+								c.hash = node.hash;
+								best = c;
+								best.elimCount = elimCount;
+						}	
+						/*else {
+							LOG.debug("elimCount is more " + elimCount);
+						}		*/			
+			}/*
+			else {
+				LOG.debug("fn is used");
+			}*/
 		}
-		return Canopy.estimateCanopies(node.training, can);
+		return best; //Canopy.estimateCanopies(node.training, can);
 	}
 
 	public Tree<Canopy> getBlockingTreeSpark(Canopy node, List<FieldDefinition> fieldsOfInterest) throws Exception {
@@ -206,7 +218,9 @@ public class Block implements Serializable {
 						tree.addLeaf(node, n);
 						if (LOG.isDebugEnabled()) {
 							LOG.debug(" Finding for " + n);
-						}					
+						}		
+						LOG.debug("Tree so far: ");
+						LOG.debug(tree);			
 						getBlockingTreeSpark(tree, node, n, canopiesToTry);
 					}
 				}

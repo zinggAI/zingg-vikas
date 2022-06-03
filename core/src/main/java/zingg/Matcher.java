@@ -26,6 +26,8 @@ import zingg.client.util.ColName;
 import zingg.client.util.ColValues;
 import zingg.util.Metric;
 import zingg.client.util.Util;
+import zingg.distBlock.BFn;
+import zingg.distBlock.BTreeBuilder;
 import zingg.util.BlockingTreeUtil;
 import zingg.util.DSUtil;
 import zingg.util.GraphUtil;
@@ -48,8 +50,8 @@ public class Matcher extends ZinggBase{
 
 	protected Dataset<Row> getBlocked(Dataset<Row> testData) throws Exception, ZinggClientException{
 		LOG.debug("Blocking model file location is " + args.getBlockFile());
-		Tree<Canopy> tree = BlockingTreeUtil.readBlockingTree(spark, args);
-		Dataset<Row> blocked = testData.map(new Block.BlockFunction(tree), RowEncoder.apply(Block.appendHashCol(testData.schema())));
+		Tree<BFn> tree = BlockingTreeUtil.readBlockingTree(spark, args);
+		Dataset<Row> blocked = testData.map(new BTreeBuilder.BlockFunction(tree), RowEncoder.apply(BTreeBuilder.appendHashCol(testData.schema())));
 		Dataset<Row> blocked1 = blocked.repartition(args.getNumPartitions(), blocked.col(ColName.HASH_COL)); //.cache();
 		return blocked1;
 	}

@@ -47,6 +47,8 @@ public class Canopy implements Serializable, Comparable<Canopy> {
 	List<Row> dupeRemaining;
 	long trainingSize = -1;
 
+	int index;
+
 	public Canopy() {
 	}
 
@@ -333,11 +335,11 @@ public class Canopy implements Serializable, Comparable<Canopy> {
 	}
 
 	public int compareTo(Canopy other) {
-		return (int) (other.elimCount - this.elimCount);
+		return (int) (this.elimCount - other.elimCount);
 	}
 
 
-	public static Canopy estimateCanopies(Dataset<Row> t, Map<Canopy, Integer> canopies) {
+	public static Canopy estimateCanopies(Dataset<Row> t, Map<Canopy, Long> canopies) {
 		/*Collections.sort(canopies);
 		//t.show(true);
 		Row r = t.takeAsList(1).get(0);
@@ -351,8 +353,8 @@ public class Canopy implements Serializable, Comparable<Canopy> {
 		sortedCanopies.addAll(canopies.keySet());
 		Collections.sort(sortedCanopies);
 		for (Canopy c: sortedCanopies) {
-			LOG.debug("estimating for " + c);
-			int index = canopies.get(c);
+			LOG.debug("estimating for " + c + " with index " + c.index);
+			int index = c.index;
 			Dataset<Row> r = t.select(ColName.HASH_COL + index).groupBy(ColName.HASH_COL + index).agg(functions.count(ColName.HASH_COL+index)
 				.alias("count"+index));
 			if (r.count() > 0) {

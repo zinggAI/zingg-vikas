@@ -26,6 +26,9 @@ import zingg.client.MatchType;
 import zingg.client.ZinggClientException;
 import zingg.client.util.ListMap;
 import zingg.client.util.Util;
+import zingg.distBlock.BFn;
+import zingg.distBlock.BTreeBuilder;
+import zingg.distBlock.Context;
 import zingg.hash.HashFunction;
 
 public class BlockingTreeUtil {
@@ -33,7 +36,7 @@ public class BlockingTreeUtil {
     public static final Log LOG = LogFactory.getLog(BlockingTreeUtil.class);
 	
 
-    public static Tree<Canopy> createBlockingTree(Dataset<Row> testData,  
+    public static Tree<BFn> createBlockingTree(Dataset<Row> testData,  
 			Dataset<Row> positives, double sampleFraction, long blockSize,
             Arguments args,
             ListMap<DataType, HashFunction> hashFunctions) throws Exception {
@@ -48,8 +51,13 @@ public class BlockingTreeUtil {
 		LOG.info("Learning indexing rules for block size " + blockSize);
        
 		positives = positives.coalesce(1); 
-		Block cblock = new Block(sample, positives, hashFunctions, blockSize);
+		/*Block cblock = new Block(sample, positives, hashFunctions, blockSize);
 		Canopy root = new Canopy(sample, positives.collectAsList());
+
+		*/
+
+		Context context = new Context(sample, positives.collectAsList());
+		BTreeBuilder treeBuilder = new BTreeBuilder(blockSize);
 
 		List<FieldDefinition> fd = new ArrayList<FieldDefinition> ();
 
@@ -59,8 +67,9 @@ public class BlockingTreeUtil {
 			}
 		}
 
-		Tree<Canopy> blockingTree = cblock.getBlockingTreeSpark(root,
-				fd);
+
+
+		Tree<BFn> blockingTree = treeBuilder.getBlockingTree(fd, hashFunctions, context);
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("The blocking tree is ");
 			blockingTree.print(2);
@@ -70,14 +79,14 @@ public class BlockingTreeUtil {
 	}
 
 	
-	public static Tree<Canopy> createBlockingTreeFromSample(Dataset<Row> testData,  
+	public static Tree<BFn> createBlockingTreeFromSample(Dataset<Row> testData,  
 			Dataset<Row> positives, double sampleFraction, long blockSize, Arguments args, 
             ListMap<DataType, HashFunction> hashFunctions) throws Exception {
 		Dataset<Row> sample = testData.sample(false, sampleFraction); 
 		return createBlockingTree(sample, positives, sampleFraction, blockSize, args, hashFunctions);
 	}
 	
-	public static void writeBlockingTree(SparkSession spark, JavaSparkContext ctx, Tree<Canopy> blockingTree, Arguments args) throws Exception, ZinggClientException {
+	public static void writeBlockingTree(SparkSession spark, JavaSparkContext ctx, Tree<BFn> blockingTree, Arguments args) throws Exception, ZinggClientException {
 		byte[] byteArray  = Util.convertObjectIntoByteArray(blockingTree);
 		StructType schema = DataTypes.createStructType(new StructField[] { DataTypes.createStructField("BlockingTree", DataTypes.BinaryType, false) });
 		List<Object> objList = new ArrayList<>();
@@ -87,11 +96,11 @@ public class BlockingTreeUtil {
 		PipeUtil.write(df, args, ctx, PipeUtil.getBlockingTreePipe(args));
 	}
 
-	public static Tree<Canopy> readBlockingTree(SparkSession spark, Arguments args) throws Exception, ZinggClientException{
+	public static Tree<BFn> readBlockingTree(SparkSession spark, Arguments args) throws Exception, ZinggClientException{
 		Dataset<Row> tree = PipeUtil.read(spark, false, args.getNumPartitions(), false, PipeUtil.getBlockingTreePipe(args));
 		byte [] byteArrayBack = (byte[]) tree.head().get(0);
-		Tree<Canopy> blockingTree = null;
-		blockingTree =  (Tree<Canopy>) Util.revertObjectFromByteArray(byteArrayBack);
+		Tree<BFn> blockingTree = null;
+		blockingTree =  (Tree<BFn>) Util.revertObjectFromByteArray(byteArrayBack);
 		return blockingTree;
 	}
 }
