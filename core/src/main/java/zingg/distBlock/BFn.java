@@ -46,7 +46,7 @@ public class BFn extends Fn{
     public String toString() {
         return "{" +
         " function='" + getFunction() + "'" +
-        ", field='" + getField().fieldName + "'" +
+        ", field='" + getField() + "'" +
         ", index='" + getIndex() + "'" +
         ", result='" + getResult() + "'" +
             "}";
