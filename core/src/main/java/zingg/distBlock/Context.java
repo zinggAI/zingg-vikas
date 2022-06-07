@@ -12,7 +12,7 @@ public class Context {
 	List<Row> matchingPairs;
 
     public Context(Dataset<Row> dataSample, List<Row> matchingPairs) {
-        this.dataSample = dataSample;
+        this.dataSample = dataSample.cache();
         this.matchingPairs = matchingPairs;
     }
 
