@@ -39,7 +39,7 @@ public class Tree<T> implements Serializable {
 		t.parent = this;
 		t.locate = this.locate;
 		locate.put(leaf, t);
-		// LOG.info(printTree(2));
+		//LOG.info(printTree(2));
 		return t;
 	}
 

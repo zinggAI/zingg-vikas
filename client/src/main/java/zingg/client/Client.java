@@ -169,7 +169,7 @@ public class Client implements Serializable {
 			}
 			LOG.warn("Apologies for this message. Zingg has encountered an error. "
 					+ e.getMessage());
-			if (LOG.isDebugEnabled()) e.printStackTrace();
+			e.printStackTrace();
 		}
 		catch( Throwable e) {
 			if (options != null && options.get(ClientOptions.EMAIL) != null) {
@@ -179,7 +179,7 @@ public class Client implements Serializable {
 			}
 			LOG.warn("Apologies for this message. Zingg has encountered an error. "
 					+ e.getMessage());
-			if (LOG.isDebugEnabled()) e.printStackTrace();
+			e.printStackTrace();
 		}
 		finally {
 			try {

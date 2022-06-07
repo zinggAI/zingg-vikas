@@ -92,7 +92,7 @@ public class BTreeBuilder {
 		// //LOG.debug("Tree " + tree);
 		// //LOG.debug("Node  " + node);
 		// //LOG.debug("Index " + index);
-		// //LOG.debug("Function " + function);
+
 		boolean isUsed = false;
 		if (node == null || tree == null)
 			return false;
@@ -121,24 +121,31 @@ public class BTreeBuilder {
 
     public BFn getBestNode(Tree<BFn> tree, BFn parent, BFn node,
         Map<Integer, Fn> fnsToTry, Context context) throws Exception {
-		long least = Long.MAX_VALUE;
-		Fn best = null;
+		FnResult least = new FnResult(Long.MAX_VALUE, null, -1);
+		BFn best = null;
 		for (Integer j : fnsToTry.keySet()) {
 			Fn fn = fnsToTry.get(j);
 			if (!isFunctionUsed(tree, node, fn)) {
-						long elimCount = fn.estimateElimCount(context);
-						if (least >= elimCount || elimCount == 0) {
-								least = elimCount;								
-								best = fn;
-						}
+						BFn bFnToTry = new BFn(fn, new FnResult());
+						bFnToTry.estimateElimCount(context);
+						bFnToTry.estimateChildren(context);
+						//LOG.debug("Comparing " + bFnToTry.result  + " with  " + least);	
+						if (bFnToTry.getResult().approxChildren >= 1) {
+							if (bFnToTry.getResult().compareTo(least) > 0){		
+								//LOG.debug(" new is better");	
+								best = bFnToTry; 
+								least = bFnToTry.getResult();
+								//greedy, how much better can it get
+								if (bFnToTry.getResult().getElimCount() == 0 ) return bFnToTry;
+							}
+							/*else {
+								LOG.debug(" old is better ");
+							}*/
+						}//childess is of no use
+											
 			}
 		}
-		if (best != null) {
-			FnResult result = new FnResult();
-			result.elimCount = least;
-			return new BFn(best, result);
-		}
-		return null; //BFn.estimateCanopies(node.training, can);
+		return best;
 	}
 
     public Tree<BFn> getBlockingTree(Tree<BFn> tree, BFn parent,
@@ -154,41 +161,33 @@ public class BTreeBuilder {
 					if (LOG.isDebugEnabled()) {
 						LOG.debug(" HashFunction is " + best + " and node is " + node);
 					}
-					//best.copyTo(node);
-					node.setResult(best.getResult());
-					node.setFunction(best.getFunction());
-					node.setField(best.getField());
-					node.setIndex(best.getIndex());
+					node.copyFrom(best);
 					if (tree == null && parent == null) {
-						tree = new Tree<BFn>(best);
-					} 
-					List<Pair<BFn, Context>> canopies = getChildren(best, context);
-					if (LOG.isDebugEnabled()) {
-						LOG.debug(" Children size is " + canopies.size());
+						LOG.debug("building new tree ");
+						tree = new Tree<BFn>(node);
 					}
+					
+					List<Pair<BFn, Context>> canopies = getChildren(node, context);
 					for (Pair<BFn, Context> n : canopies) {
+						LOG.debug("adding child " + n.first.result.hash + " to " + node);
 						tree.addLeaf(node, n.first);
 						if (LOG.isDebugEnabled()) {
-							LOG.debug(" Finding for " + n);
-						}		
-						LOG.debug("Tree so far: ");
-						LOG.debug(tree);			
+							LOG.debug("Tree so far: ");
+							LOG.debug(tree);			
+							LOG.debug(" Finding for " + n.first);
+						}							
 						getBlockingTree(tree, node, n.first, fnToTry, n.second);
 					}
 				}
 			} else {
-				if ((context. getMatchingPairs()  == null) || (context. getMatchingPairs() .size() == 0)) {
+				if ((context.getMatchingPairs()  == null) || (context.getMatchingPairs().size() == 0)) {
 					LOG.warn("Ran out of training at size " + size + " for node " + node);
 				}
 				else {
 					LOG.debug("Min size reached " + size + " for node " + node);
 				}				
-			}
-			if (LOG.isDebugEnabled()) {
-				LOG.debug("Tree: ");
-				LOG.debug(tree);
-			}
-			LOG.debug(" Final tree is ");
+			}			
+			LOG.debug(" Tree is ");
 			LOG.debug(tree);
 			return tree;
 		}
@@ -196,21 +195,14 @@ public class BTreeBuilder {
 		public List<Pair<BFn, Context>> getChildren(BFn fn, Context c) {
 			
 			List<Pair<BFn, Context>> returnCanopies = new ArrayList<Pair<BFn, Context>>();
-			c.getDataSample().show();
-			Dataset<Row> newDS = c.getDataSample().withColumn(ColName.HASH_COL, functions.callUDF(fn.getFunction().getName(), 
-				c.getDataSample().col(fn.getField().fieldName))).cache();
-			newDS.show();
+			//c.getDataSample().show();
 			//List<Row> uniqueHashes = newTraining.select(ColName.HASH_COL).distinct().collectAsList();
-			List<Row> uniqueHashes = newDS.select(ColName.HASH_COL).distinct().collectAsList();
+			List<Row> uniqueHashes = c.getDataSample().select(ColName.HASH_COL + fn.index).distinct().collectAsList();
 				//.filter("count>8").collectAsList();
 			for (Row row : uniqueHashes) {
 				Object key = row.get(0);
-				LOG.debug("child hash is " + key);
-				Dataset<Row> tupleList = newDS.filter(newDS.col(ColName.HASH_COL).equalTo(key))
-					.drop(ColName.HASH_COL);
-				Context can = new Context(tupleList, c.getMatchingPairs());
-				LOG.debug(" canopy size is " + tupleList.count() + " for  hash "
-						+ key);
+				Dataset<Row> tupleList = c.getDataSample().filter(c.getDataSample().col(ColName.HASH_COL + fn.index).equalTo(key));
+				Context can = new Context(tupleList, fn.estimateElimCount(c));
 				FnResult result = new FnResult();
 				result.hash = key;
 				BFn baby = new BFn(result);

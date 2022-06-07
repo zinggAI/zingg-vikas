@@ -1,11 +1,25 @@
 package zingg.distBlock;
 
-public class FnResult {
+import java.io.Serializable;
+
+public class FnResult implements Comparable<FnResult>, Serializable {
 
     // number of duplicates eliminated after function applied on fn context
 	long elimCount = -1;
-	// hash of canopy
+	// hash which resulted in this canopy
 	Object hash;
+	long approxChildren;
+	
+	public FnResult() {
+
+	}
+
+	public FnResult(long elimCount, Object hash, long approxChildren) {
+		this.elimCount = elimCount;
+		this.hash = hash;
+		this.approxChildren = approxChildren;
+	}
+
 
 
 	public long getElimCount() {
@@ -24,15 +38,19 @@ public class FnResult {
 		this.hash = hash;
 	}
 
+	public int compareTo(FnResult other) {
+		return (this.elimCount >= other.elimCount ? -1 : 1);
+	}
+
+
 
 	@Override
 	public String toString() {
 		return "{" +
 			" elimCount='" + getElimCount() + "'" +
 			", hash='" + getHash() + "'" +
+			", children='" + approxChildren + "'" +
 			"}";
 	}
-
-
     
 }

@@ -153,6 +153,22 @@ public class FieldDefinition implements
 		return true;
 	}
 
+
+	@Override
+	public String toString() {
+		return "{" +
+			" matchType='" + getMatchType() + "'" +
+			", dataType='" + getDataType() + "'" +
+			", fieldName='" + getFieldName() + "'" +
+			", fields='" + getFields() + "'" +
+			", stopWords='" + getStopWords() + "'" +
+			", abbreviations='" + getAbbreviations() + "'" +
+			"}";
+	}
+
+
+
+
 	public static class DataTypeSerializer extends JsonSerializer<DataType>{
 		@Override
 	    public void serialize(DataType dType, JsonGenerator jsonGenerator, 

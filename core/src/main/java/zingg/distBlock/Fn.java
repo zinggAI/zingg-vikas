@@ -1,20 +1,18 @@
 package zingg.distBlock;
 
-import java.util.ArrayList;
+import java.io.Serializable;
 import java.util.Objects;
 
-import org.apache.spark.sql.Row;
 
 import zingg.client.FieldDefinition;
-import zingg.client.util.ColName;
 import zingg.hash.HashFunction;
 
-public class Fn {
+public class Fn implements Serializable {
 
     HashFunction function;
 	// aplied on field
 	FieldDefinition field;
-    int index;
+    int index = -1;
 
     public Fn(int index, FieldDefinition field, HashFunction function) {
         this.index = index;
@@ -64,28 +62,9 @@ public class Fn {
         setIndex(index);
         return this;
     }
+   
 
-    protected long estimateElimCount(Context ctx) {
-        ArrayList<Row> dupeRemaining = new ArrayList<Row>();
-		for(Row r: ctx.getMatchingPairs()) {
-			Object hash1 = function.apply(r, field.fieldName);
-			Object hash2 = function.apply(r, ColName.COL_PREFIX + field.fieldName);
-			//LOG.debug("hash1 " + hash1);		
-			//LOG.debug("hash2 " + hash2);
-			if (hash1 == null && hash2 ==null) {
-				dupeRemaining.add(r);
-			}
-			else if (hash1 != null && hash2 != null && hash1.equals(hash2)) {
-				dupeRemaining.add(r);
-				//LOG.debug("NOT eliminatin " );	
-			}
-			else {
-				//LOG.debug("eliminatin " + r);		
-			}
-		}			
-		return ctx.getMatchingPairs().size() - dupeRemaining.size();
-    }
-
+    
     @Override
     public boolean equals(Object o) {
         if (o == this)
@@ -97,10 +76,7 @@ public class Fn {
         return Objects.equals(function, fn.function) && Objects.equals(field, fn.field) && index == fn.index;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(function, field, index);
-    }
+   
 
     @Override
     public String toString() {
