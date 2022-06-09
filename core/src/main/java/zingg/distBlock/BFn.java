@@ -86,7 +86,8 @@ public class BFn extends Fn{
     }
 
     public void estimateChildren(Context ctx) {
-		result.approxChildren = ctx.getDataSample().select(ColName.HASH_COL + index).distinct().count();
+		//result.approxChildren = ctx.getDataSample().select(ColName.HASH_COL + index).distinct().count();
+        result.approxChildren = 100;
 	}
 
     

@@ -150,11 +150,13 @@ public class BTreeBuilder {
 
     public Tree<BFn> getBlockingTree(Tree<BFn> tree, BFn parent,
 				BFn node, Map<Integer, Fn> fnToTry, Context context) throws Exception {
-			long size = context.getDataSampleSize();
-			if (LOG.isDebugEnabled()) {
+			//long size = context.getDataSampleSize();
+			/*if (LOG.isDebugEnabled()) {
 				LOG.debug("Size, maxSize " + size + ", " + maxSize);
 			}
 			if (context.getMatchingPairs()  != null && context.getMatchingPairsSize() > 0 && size > maxSize ) {
+			*/
+			if (context.getMatchingPairs()  != null && context.getMatchingPairsSize() > 0 && context != null ) {
 				//LOG.debug("Size is bigger ");
 				BFn best = getBestNode(tree, parent, node, fnToTry, context);
 				if (best != null) {
@@ -167,7 +169,7 @@ public class BTreeBuilder {
 						tree = new Tree<BFn>(node);
 					}
 					
-					List<Pair<BFn, Context>> canopies = getChildren(node, context);
+					List<Pair<BFn, Context>> canopies = getChildren(node, context, maxSize);
 					for (Pair<BFn, Context> n : canopies) {
 						LOG.debug("adding child " + n.first.result.hash + " to " + node);
 						tree.addLeaf(node, n.first);
@@ -181,10 +183,10 @@ public class BTreeBuilder {
 				}
 			} else {
 				if ((context.getMatchingPairs()  == null) || (context.getMatchingPairs().size() == 0)) {
-					LOG.warn("Ran out of training at size " + size + " for node " + node);
+					LOG.warn("Ran out of training for node " + node);
 				}
 				else {
-					LOG.debug("Min size reached " + size + " for node " + node);
+					LOG.debug("Min size reached for node " + node);
 				}				
 			}			
 			LOG.debug(" Tree is ");
@@ -192,13 +194,17 @@ public class BTreeBuilder {
 			return tree;
 		}
 
-		public List<Pair<BFn, Context>> getChildren(BFn fn, Context c) {
+		public List<Pair<BFn, Context>> getChildren(BFn fn, Context c, long maxSize) {
 			
 			List<Pair<BFn, Context>> returnCanopies = new ArrayList<Pair<BFn, Context>>();
 			//c.getDataSample().show();
 			//List<Row> uniqueHashes = newTraining.select(ColName.HASH_COL).distinct().collectAsList();
-			List<Row> uniqueHashes = c.getDataSample().select(ColName.HASH_COL + fn.index).distinct().collectAsList();
-				//.filter("count>8").collectAsList();
+			/*List<Row> uniqueHashes = c.getDataSample().select(ColName.HASH_COL + fn.index).distinct().collectAsList();
+				//.filter("count>8").collectAsList();*/
+			Dataset<Row> hashesWithCounts = c.getDataSample().select(ColName.HASH_COL+ fn.index).groupBy(ColName.HASH_COL+ fn.index).agg(
+				functions.count(ColName.HASH_COL+ fn.index)
+				.alias("z_count" + fn.index)).filter("z_count" + fn.index + " > " + maxSize);
+			List<Row> uniqueHashes =  hashesWithCounts.distinct().collectAsList();
 			for (Row row : uniqueHashes) {
 				Object key = row.get(0);
 				Dataset<Row> tupleList = c.getDataSample().filter(c.getDataSample().col(ColName.HASH_COL + fn.index).equalTo(key));
