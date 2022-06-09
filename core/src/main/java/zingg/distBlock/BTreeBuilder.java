@@ -126,24 +126,24 @@ public class BTreeBuilder {
 		for (Integer j : fnsToTry.keySet()) {
 			Fn fn = fnsToTry.get(j);
 			if (!isFunctionUsed(tree, node, fn)) {
-						BFn bFnToTry = new BFn(fn, new FnResult());
-						bFnToTry.estimateElimCount(context);
+				BFn bFnToTry = new BFn(fn, new FnResult());
+				bFnToTry.estimateElimCount(context);
+				if (bFnToTry.getResult().compareTo(least) > 0){		
+						//LOG.debug(" new is better");	
 						bFnToTry.estimateChildren(context);
 						//LOG.debug("Comparing " + bFnToTry.result  + " with  " + least);	
-						if (bFnToTry.getResult().approxChildren >= 1) {
-							if (bFnToTry.getResult().compareTo(least) > 0){		
-								//LOG.debug(" new is better");	
-								best = bFnToTry; 
-								least = bFnToTry.getResult();
-								//greedy, how much better can it get
-								if (bFnToTry.getResult().getElimCount() == 0 ) return bFnToTry;
-							}
-							/*else {
-								LOG.debug(" old is better ");
-							}*/
+						if (bFnToTry.getResult().approxChildren > 1) {
+							best = bFnToTry; 
+							least = bFnToTry.getResult();
+							//greedy, how much better can it get
+							if (bFnToTry.getResult().getElimCount() == 0 ) return bFnToTry;
 						}//childess is of no use
-											
+				}
+					/*else {
+						LOG.debug(" old is better ");
+					}*/
 			}
+											
 		}
 		return best;
 	}
