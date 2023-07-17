@@ -246,7 +246,7 @@ public class Canopy<R> implements Serializable {
 			LOG.debug("hash1 " + hash1);		
 			LOG.debug("hash2 " + hash2);
 			if (hash1 == null && hash2 ==null) {
-				dupeRemaining.add(r);
+				//dupeRemaining.add(r);
 			}
 			else if (hash1 != null && hash2 != null && hash1.equals(hash2)) {
 				dupeRemaining.add(r);
