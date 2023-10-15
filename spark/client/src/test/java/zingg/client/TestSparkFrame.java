@@ -362,6 +362,18 @@ public class TestSparkFrame extends TestSparkFrameBase {
 		
 	}
 	
+	@Test
+	public void testUnionNoDupeRemoval() throws ZinggClientException {	
+		SparkFrame inpDF1 = getInputData();
+		SparkFrame inpDF2 = getInputData();
+		long countExpectedNoDupeRemoval = 2*inpDF1.count();
+		ZFrame<Dataset<Row>, Row, Column> unionDF = inpDF1.union(inpDF2);
+		ZFrame<Dataset<Row>, Row, Column> unionDFDistinct = unionDF.distinct();
+		assertEquals(countExpectedNoDupeRemoval,unionDF.count());
+		assertEquals(countExpectedNoDupeRemoval/2,unionDFDistinct.count());
+	}
+	
+	
 	private SparkFrame getPosPairDF() {
 		Row[] posData = getPosPairRows();	
 		StructType schema = getPairSchema();
