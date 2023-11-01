@@ -14,7 +14,7 @@ import zingg.common.client.util.ColValues;
 import zingg.common.core.block.Canopy;
 import zingg.common.core.block.Tree;
 import zingg.common.core.model.Model;
-import zingg.common.core.obviousdupes.ObviousDupesUtil;
+import zingg.common.core.deterministicmatching.DeterministicMatchingUtil;
 import zingg.common.core.preprocess.StopWordsRemover;
 import zingg.common.core.util.Analytics;
 import zingg.common.core.util.Metric;
@@ -24,7 +24,7 @@ public abstract class Matcher<S,D,R,C,T> extends ZinggBase<S,D,R,C,T>{
 	private static final long serialVersionUID = 1L;
 	protected static String name = "zingg.Matcher";
 	public static final Log LOG = LogFactory.getLog(Matcher.class);    
-	protected ObviousDupesUtil<S, D,R,C> obvDupeUtil;
+	protected DeterministicMatchingUtil<S, D,R,C> deterministicMatchingUtil;
 	
     public Matcher() {
         setZinggOptions(ZinggOptions.MATCH);
@@ -118,9 +118,9 @@ public abstract class Matcher<S,D,R,C,T> extends ZinggBase<S,D,R,C,T>{
 			//ZFrame<D,R,C>allEqual =  getDSUtil().allFieldsEqual(blocks, args);
 			//allEqual = allEqual.cache();
 
-			//get obvious dupes
-			ZFrame<D, R, C> obvDupePairs = getObvDupePairs(blocked);
-			blocks = removeObvDupesFromBlocks(blocks,obvDupePairs);
+			//get deterministic matchings
+			ZFrame<D, R, C> deterministicMatchingPairs = getDeterministicMatchingPairs(blocked);
+			blocks = removeDeterministicMatchingFromBlocks(blocks,deterministicMatchingPairs);
 			
 			//send remaining to model 
 			Model model = getModel();
@@ -149,7 +149,35 @@ public abstract class Matcher<S,D,R,C,T> extends ZinggBase<S,D,R,C,T>{
 			//writeOutput(blocked, dupes.union(allEqual).cache());		
 			
 			ZFrame<D,R,C>dupesActual = getDupesActualForGraph(dupes);
-			dupesActual = addObvDupes(obvDupePairs, dupesActual);	
+			dupesActual = addDeterministicMatching(deterministicMatchingPairs, dupesActual);	
+			return dupesActual;
+	}
+
+	@Override
+    public void execute() throws ZinggClientException {
+        try {
+			// read input, filter, remove self joins
+			ZFrame<D,R,C>  testDataOriginal = getTestData();
+			testDataOriginal =  getFieldDefColumnsDS(testDataOriginal);
+			ZFrame<D,R,C>  testData = getStopWords().preprocessForStopWords(testDataOriginal);
+			testData = testData.repartition(args.getNumPartitions(), testData.col(ColName.ID_COL));
+			//testData = dropDuplicates(testData);
+			long count = testData.count();
+			LOG.info("Read " + count);
+			Analytics.track(Metric.DATA_COUNT, count, args.getCollectMetrics());
+
+			ZFrame<D,R,C>blocked = getBlocked(testData);
+			LOG.info("Blocked ");
+			/*blocked = blocked.cache();
+			blocked.withColumn("partition_id", functions.spark_partition_id())
+				.groupBy("partition_id").agg(functions.count("z_zid")).as("zid").orderBy("partition_id").toJavaRDD().saveAsTextFile("/tmp/zblockedParts");
+				*/
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("Num distinct hashes " + blocked.select(ColName.HASH_COL).distinct().count());
+				blocked.show();
+			}
+			//LOG.warn("Num distinct hashes " + blocked.agg(functions.approx_count_distinct(ColName.HASH_COL)).count());
+			ZFrame<D,R,C> dupesActual = getActualDupes(blocked, testData);
 			
 			//dupesActual.explain();
 			//dupesActual.toJavaRDD().saveAsTextFile("/tmp/zdupes");
@@ -163,19 +191,19 @@ public abstract class Matcher<S,D,R,C,T> extends ZinggBase<S,D,R,C,T>{
 		}
     }
 
-	protected ZFrame<D, R, C> getObvDupePairs(ZFrame<D, R, C> blocked) {
-		return getObvDupeUtil().getObvDupePairs(blocked);
+	protected ZFrame<D, R, C> getDeterministicMatchingPairs(ZFrame<D, R, C> blocked) {
+		return getDeterministicMatchingUtil().getDeterministicMatchingPairs(blocked);
 	}
 		
-	protected ZFrame<D, R, C> removeObvDupesFromBlocks(ZFrame<D, R, C> blocks,ZFrame<D, R, C> obvDupePairs) {
-		return getObvDupeUtil().removeObvDupesFromBlocks(blocks,obvDupePairs);
+	protected ZFrame<D, R, C> removeDeterministicMatchingFromBlocks(ZFrame<D, R, C> blocks,ZFrame<D, R, C> deterministicMatchingPairs) {
+		return getDeterministicMatchingUtil().removeDeterministicMatchingFromBlocks(blocks,deterministicMatchingPairs);
 	}
 
-	protected ZFrame<D, R, C> addObvDupes(ZFrame<D, R, C> obvDupePairs, ZFrame<D, R, C> dupesActual) {
-		if (obvDupePairs != null) {
+	protected ZFrame<D, R, C> addDeterministicMatching(ZFrame<D, R, C> deterministicMatchingPairs, ZFrame<D, R, C> dupesActual) {
+		if (deterministicMatchingPairs != null) {
 			// ensure same columns in both
-			obvDupePairs = selectColsFromDupes(obvDupePairs);
-			dupesActual = dupesActual.unionAll(obvDupePairs);
+			deterministicMatchingPairs = selectColsFromDupes(deterministicMatchingPairs);
+			dupesActual = dupesActual.unionAll(deterministicMatchingPairs);
 		}
 		return dupesActual;
 	}
@@ -321,15 +349,15 @@ public abstract class Matcher<S,D,R,C,T> extends ZinggBase<S,D,R,C,T>{
 
     protected abstract StopWordsRemover<S,D,R,C,T> getStopWords();
 
-	public ObviousDupesUtil<S, D, R, C> getObvDupeUtil() {		
-		if (obvDupeUtil==null) {
-			obvDupeUtil = new ObviousDupesUtil<S, D, R, C>(context.getDSUtil(), args);
+	public DeterministicMatchingUtil<S, D, R, C> getDeterministicMatchingUtil() {		
+		if (deterministicMatchingUtil==null) {
+			deterministicMatchingUtil = new DeterministicMatchingUtil<S, D, R, C>(context.getDSUtil(), args);
 		}
-		return obvDupeUtil;
+		return deterministicMatchingUtil;
 	}
 
-	public void setObvDupeUtil(ObviousDupesUtil<S, D, R, C> obvDupeUtil) {
-		this.obvDupeUtil = obvDupeUtil;
+	public void setDeterministicMatchingUtil(DeterministicMatchingUtil<S, D, R, C> deterministicMatchingUtil) {
+		this.deterministicMatchingUtil = deterministicMatchingUtil;
 	}
 	    
 }
