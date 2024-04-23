@@ -93,18 +93,20 @@ public abstract class Client<S,D,R,C,T> implements Serializable {
 	public void setZingg(IArguments args, ClientOptions options) throws Exception{
 		IZinggFactory zf = getZinggFactory();
 		try{
-			setZingg(zf.get(ZinggOptions.getByValue(options.get(ClientOptions.PHASE).value.trim())));
+			setZingg(zf.get(ZinggOptions.getByValue(options.get(ClientOptions.PHASE).value.trim())),options);
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			LOG.info("invoking python phase via peekModel");
 			//set default
-			setZingg(zf.get(ZinggOptions.getByValue(ZinggOptions.PEEK_MODEL.getName())));
+			setZingg(zf.get(ZinggOptions.getByValue(ZinggOptions.PEEK_MODEL.getName())),options);
 		}
 	}
 	
 
-	public void setZingg(IZingg<S,D,R,C> zingg) {
+	public void setZingg(IZingg<S,D,R,C> zingg, ClientOptions options) {
 		this.zingg = zingg; 
+		this.zingg.setClientOptions(options);
 	}
 
 	public void buildAndSetArguments(IArguments args, ClientOptions options) {
